@@ -2833,6 +2833,22 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
                 GlassRefraction.bendPercent(text));
     }
 
+    /** Liquid glass's Glass opacity row. */
+    static ValueRows.PercentRow glassOpacityRow(Context context) {
+        return percentRow(context, Settings.GLASS_OPACITY, L10n.t("Glass opacity"),
+                L10n.f("How solid the liquid glass looks over the bars' frost, in percent, from %1$s to "
+                        + "%2$s. Under %3$s lets more frost through, over it lays the bend on thicker. Leave "
+                        + "it blank for %3$s.", GlassRefraction.MIN_OPACITY, GlassRefraction.MAX_OPACITY,
+                        GlassRefraction.DEFAULT_OPACITY),
+                GlassRefraction.DEFAULT_OPACITY, HushfacebookPreferenceFragment::glassOpacitySummary);
+    }
+
+    /** What the Glass opacity row says for [text], the digits typed there. */
+    static String glassOpacitySummary(String text) {
+        return L10n.f("The liquid glass shows at %1$s percent of its standard solidity.",
+                GlassRefraction.opacityPercent(text));
+    }
+
     /** What the Emoji after the logo row says for [text], the emoji typed there. */
     static String logoEmojiSummary(String text) {
         String shown = LogoEmoji.clean(text);

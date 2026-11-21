@@ -3146,6 +3146,15 @@ public class Settings extends BaseSettings {
             new StringSetting("hushfacebook_glass_bend", "");
 
     /**
+     * How solid the liquid glass looks, a percent, digits only, blank for the standard amount
+     * ({@link app.morphe.extension.facebook.navigation.GlassRefraction#opacityPercent}). Under 100
+     * it lets more of the frost through, over 100 it lays the bend on thicker. Not a switch. Asked
+     * as each frame of the main screen draws.
+     */
+    public static final StringSetting GLASS_OPACITY =
+            new StringSetting("hushfacebook_glass_opacity", "");
+
+    /**
      * Android's status bar goes from Facebook's main screen, a swipe down from the top edge showing
      * it for a moment (#124, {@link app.morphe.extension.facebook.navigation.HiddenStatusBar}).
      * Asked as the main screen resumes, gets its focus back or lays itself out, so a change shows

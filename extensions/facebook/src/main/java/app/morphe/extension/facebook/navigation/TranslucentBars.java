@@ -1673,10 +1673,17 @@ public final class TranslucentBars {
      */
     @RequiresApi(Build.VERSION_CODES.S)
     static final class StripFrost extends Drawable {
+        /** How much of the strip's glass bend shows over its frost, like the pill's dome. */
+        private static final float GLASS_ALPHA = 0.5f;
         final View strip;
         final View host;
         final RenderNode node = new RenderNode("Hushfacebook strip frost");
         final RenderNode blur = new RenderNode("Hushfacebook strip frost blur");
+        /** The band copied sharp, which the liquid glass bend bends, and it turned over for the strip. */
+        final RenderNode sharp = new RenderNode("Hushfacebook strip glass");
+        final RenderNode glassSrc = new RenderNode("Hushfacebook strip glass turned");
+        @Nullable private GlassRefraction bend;
+        private final RectF stripBox = new RectF();
         /** The band copied, in [host]'s coordinates, and record's scratch box. */
         final Rect band = new Rect();
         private final Rect box = new Rect();
@@ -1707,21 +1714,36 @@ public final class TranslucentBars {
             int top = stripOrigin[1] + height - hostOrigin[1];
             band.set(left, top, left + width, top + height);
             node.setPosition(0, 0, width, height);
+            // The band copied once, sharp, as a bar's frost copies its glass.
+            sharp.setPosition(band.left, band.top, band.right, band.bottom);
+            RecordingCanvas full = sharp.beginRecording(width, height);
+            copying = true;
+            try {
+                full.translate(-band.left, -band.top);
+                record(host, full, band, box);
+            } finally {
+                copying = false;
+                sharp.endRecording();
+            }
+            // Drawn FROST_SCALE times smaller and blurred there.
             int smallWidth = Frost.small(width);
             int smallHeight = Frost.small(height);
             blur.setPosition(0, 0, smallWidth, smallHeight);
             RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
-            copying = true;
-            try {
-                canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
-                canvas.translate(-band.left, -band.top);
-                record(host, canvas, band, box);
-            } finally {
-                copying = false;
-                blur.endRecording();
-            }
+            canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
+            canvas.translate(-band.left, -band.top);
+            canvas.drawRenderNode(sharp);
+            blur.endRecording();
             turnOver(node.beginRecording(width, height), blur, height, tint);
             node.endRecording();
+            // And the same band turned over sharp, for the bend to sample.
+            glassSrc.setPosition(0, 0, width, height);
+            RecordingCanvas turned = glassSrc.beginRecording(width, height);
+            turned.translate(0, height);
+            turned.scale(1f, -1f);
+            turned.translate(-band.left, -band.top);
+            turned.drawRenderNode(sharp);
+            glassSrc.endRecording();
         }
 
         /**
@@ -1741,12 +1763,22 @@ public final class TranslucentBars {
             strip.getOverlay().remove(this);
             node.discardDisplayList();
             blur.discardDisplayList();
+            sharp.discardDisplayList();
+            glassSrc.discardDisplayList();
+            if (bend != null) bend.discard();
         }
 
         @Override
         public void draw(Canvas canvas) {
             if (copying || !canvas.isHardwareAccelerated()) return;
             canvas.drawRenderNode(node);
+            int width = getBounds().width();
+            int height = getBounds().height();
+            if (width <= 0 || height <= 0 || !GlassRefraction.on() || !GlassRefraction.supported()) return;
+            stripBox.set(0, 0, width, height);
+            if (bend == null) bend = new GlassRefraction(false);
+            bend.paint(canvas, glassSrc, 0, 0, width, height, stripBox, 0f,
+                    Math.min(width, height), GLASS_ALPHA);
         }
 
         @Override

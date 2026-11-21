@@ -121,6 +121,13 @@ public final class GlassRefraction {
     /** What's picked with no Glass bend saved, in percent. */
     public static final int DEFAULT_BEND = 100;
 
+    /** The lowest Glass opacity a person can pick, in percent: the bend shows nothing. */
+    public static final int MIN_OPACITY = 0;
+    /** The highest, twice the standard opacity. */
+    public static final int MAX_OPACITY = 200;
+    /** What's picked with no Glass opacity saved, in percent. */
+    public static final int DEFAULT_OPACITY = 100;
+
     /** [percent] as the multiplier the bend is scaled by, kept inside the row's range. */
     static float scale(int percent) {
         return Math.max(MIN_BEND, Math.min(MAX_BEND, percent)) / 100f;
@@ -144,6 +151,22 @@ public final class GlassRefraction {
             return Math.max(MIN_BEND, Math.min(MAX_BEND, Integer.parseInt(text)));
         } catch (NumberFormatException notANumber) {
             return DEFAULT_BEND;
+        }
+    }
+
+    /**
+     * The Glass opacity [saved] picks, in percent, held to {@link #MIN_OPACITY} to
+     * {@link #MAX_OPACITY}, or {@link #DEFAULT_OPACITY} for blank or not a number. Its own parse,
+     * like {@link #bendPercent}'s.
+     */
+    public static int opacityPercent(@Nullable String saved) {
+        if (saved == null) return DEFAULT_OPACITY;
+        String text = saved.trim();
+        if (text.isEmpty() || text.length() > 4) return DEFAULT_OPACITY;
+        try {
+            return Math.max(MIN_OPACITY, Math.min(MAX_OPACITY, Integer.parseInt(text)));
+        } catch (NumberFormatException notANumber) {
+            return DEFAULT_OPACITY;
         }
     }
 
@@ -179,6 +202,11 @@ public final class GlassRefraction {
     /** The bend's strength in percent: the Glass bend row's, or the standard for none saved. */
     int percent() {
         return bendPercent(Settings.GLASS_BEND.get());
+    }
+
+    /** The bend's opacity in percent: the Glass opacity row's, or the standard for none saved. */
+    int opacity() {
+        return opacityPercent(Settings.GLASS_OPACITY.get());
     }
 
     /**
@@ -236,7 +264,8 @@ public final class GlassRefraction {
             }
             layer.setPosition(Math.round(nodeLeft), Math.round(nodeTop),
                     Math.round(nodeLeft) + width, Math.round(nodeTop) + height);
-            layer.setAlpha(Math.round(alpha * 255));
+            layer.setAlpha(Math.max(0, Math.min(255,
+                    Math.round(alpha * opacity() / 100f * 255))));
             layer.setRenderEffect(RenderEffect.createRuntimeShaderEffect(lens, "content"));
             Canvas recording = layer.beginRecording(width, height);
             try {
