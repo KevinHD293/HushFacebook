@@ -1466,6 +1466,8 @@ public final class TranslucentBars {
         private final Rect box = new Rect();
         /** The bar's fills on screen in the window this frame, for the bend's boxes. */
         private final Rect areaWindow = new Rect();
+        /** [update]'s shown alpha this frame, for the bend-check log. */
+        private int shownAlpha;
         /** The spot behind the selected tab, in the window, and the bend's boxes in the node's coordinates. */
         private final Rect spot = new Rect();
         private final RectF rimBox = new RectF();
@@ -1502,6 +1504,7 @@ public final class TranslucentBars {
          */
         void update(Rect area, float shown, int frame, float corner) {
             this.frame = frame;
+            this.shownAlpha = Math.round(shown * 255);
             areaWindow.set(area);
             this.corner = corner;
             if (getBounds().width() != host.getWidth() || getBounds().height() != host.getHeight()) {
@@ -1606,7 +1609,7 @@ public final class TranslucentBars {
                 bendTold++;
                 Logger.printDebug(() -> "Liquid glass: bend check frosted=" + frosted
                         + " on=" + GlassRefraction.on() + " supported=" + GlassRefraction.supported()
-                        + " inside=" + inside.width() + "x" + inside.height()
+                        + " inside=" + inside + " shown=" + shownAlpha
                         + " tabBar=" + tabBar);
             }
             if (!frosted || !GlassRefraction.on() || !GlassRefraction.supported()) return;
@@ -1624,6 +1627,13 @@ public final class TranslucentBars {
             } else {
                 rimBox.set(-high, -high, wide + high, high);
                 rim().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, 0f, high);
+                // The top bar domes over its whole face too, so it and the status bar strip's
+                // dome read as the one slab of glass HushGram's top runs up into the strip.
+                if (!tabBar) {
+                    rimBox.set(0, 0, wide, high);
+                    dome().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, 0f,
+                            Math.min(wide, high), DOME_ALPHA);
+                }
             }
             if (!tabBar || !RoundedTabBar.spotInWindow(bar, spot)) return;
             bubbleBox.set(spot.left - areaWindow.left, spot.top - areaWindow.top,
