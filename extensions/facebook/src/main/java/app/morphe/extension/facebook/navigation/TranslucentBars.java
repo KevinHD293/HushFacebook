@@ -913,15 +913,11 @@ public final class TranslucentBars {
             }
             frame++;
             int height = window.getHeight();
-            int stripInset = statusBarTop(window);
-            View stripView = seeThrough ? stripOf(window, stripInset) : null;
             boolean blurs = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && window.isHardwareAccelerated();
             // The top of the tab bar's rows on screen, when they're along the bottom.
             int cover = Integer.MAX_VALUE;
             boolean stretchLooked = false;
             boolean stretchWaits = false;
-            // The view under the top bar, which the strip behind the status bar is frosted from.
-            View topHost = null;
             for (int i = 0; i < anchors.size(); i++) {
                 View anchor = shown(i);
                 if (anchor == null) continue;
@@ -951,16 +947,14 @@ public final class TranslucentBars {
                 }
                 if (!seeThrough) continue;
                 View under = blurs ? underNow(bar, rows) : null;
-                if (holdsTopBar && under != null) topHost = under;
                 seen.setEmpty();
                 float shown = keep(bar, bar, row, under != null, 1f, 0);
                 if (under != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     keepInside(seen, rows, height);
                     float corner = keepInPill(seen, bar, pill);
                     boolean isTabBar = tabBar.equals(anchor.getClass().getName());
-                    int stripHigh = !isTabBar && stripView != null ? stripView.getHeight() : 0;
                     if (shown > 0f && !seen.isEmpty()) {
-                        frost(bar, under, seen, shown, corner, rows.height(), stripHigh, isTabBar);
+                        frost(bar, under, seen, shown, corner, rows.height(), 0, isTabBar);
                     } else {
                         // Slid or faded out of sight: its frost waits, empty, for it to come back.
                         Frost waiting = (Frost) frosts.get(bar);
@@ -973,7 +967,8 @@ public final class TranslucentBars {
             if (!seeThrough) return;
             forgetUnseen();
             dropStaleFrost();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) frostStrip(window, topHost, statusBarTop(window));
+            // The status bar keeps Facebook's own strip: no frost and no glass reach up into it.
+            dropStrip();
         }
 
         /**
@@ -1468,7 +1463,7 @@ public final class TranslucentBars {
     @RequiresApi(Build.VERSION_CODES.S)
     static final class Frost extends Drawable {
         /** How much of the pill's dome shows over its frost, so the glass reads without hiding it. */
-        private static final float DOME_ALPHA = 0.4f;
+        private static final float DOME_ALPHA = 0.22f;
         final View host;
         /** The bar this frost is for, for the liquid glass bend's selected-tab spot. */
         private final View bar;
