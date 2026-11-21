@@ -957,10 +957,10 @@ public final class TranslucentBars {
                 if (under != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     keepInside(seen, rows, height);
                     float corner = keepInPill(seen, bar, pill);
-                    if (holdsTopBar && stripView != null) includeStrip(seen, stripView);
+                    boolean isTabBar = tabBar.equals(anchor.getClass().getName());
+                    int stripHigh = !isTabBar && stripView != null ? stripView.getHeight() : 0;
                     if (shown > 0f && !seen.isEmpty()) {
-                        frost(bar, under, seen, shown, corner, rows.height(),
-                                tabBar.equals(anchor.getClass().getName()));
+                        frost(bar, under, seen, shown, corner, rows.height(), stripHigh, isTabBar);
                     } else {
                         // Slid or faded out of sight: its frost waits, empty, for it to come back.
                         Frost waiting = (Frost) frosts.get(bar);
@@ -1010,18 +1010,6 @@ public final class TranslucentBars {
             retryBooked = false;
             View window = this.window.get();
             if (window != null && !stopped) window.invalidate();
-        }
-
-        /**
-         * Extends the top bar's frost [seen] up over the status bar strip, so the strip and the
-         * bar frost as the one slab of glass HushGram's top bar reaches up into (#462): one
-         * backdrop, one bend, no seam.
-         */
-        private void includeStrip(Rect seen, View strip) {
-            strip.getLocationInWindow(origin);
-            seen.top = Math.min(seen.top, origin[1]);
-            seen.left = Math.min(seen.left, origin[0]);
-            seen.right = Math.max(seen.right, origin[0] + strip.getWidth());
         }
 
         /**
@@ -1392,7 +1380,7 @@ public final class TranslucentBars {
 
         @RequiresApi(Build.VERSION_CODES.S)
         private void frost(View bar, View under, Rect area, float shown, float corner, int barHigh,
-                boolean tabBar) {
+                int stripHigh, boolean tabBar) {
             Frost frost = (Frost) frosts.get(bar);
             if (frost != null && (frost.host != under || frost.tabBar != tabBar)) {
                 frost.remove();
@@ -1404,7 +1392,7 @@ public final class TranslucentBars {
                 frosts.put(bar, frost);
                 HookStatus.counted(FAMILY, FROSTED);
             }
-            frost.update(area, shown, frame, corner, barHigh);
+            frost.update(area, shown, frame, corner, barHigh, stripHigh);
         }
 
         /**
@@ -1414,21 +1402,21 @@ public final class TranslucentBars {
         @RequiresApi(Build.VERSION_CODES.S)
         void frostStrip(View window, @Nullable View host, int inset) {
             View found = host == null ? null : stripOf(window, inset);
-            // The top bar's frost reaching up over the strip is the one slab of glass HushGram's
-            // top bar makes: the strip only needs its fill see-through for it to show through.
+            // The top bar's glass reaches up over the strip as one slab of glass, the way
+            // HushGram's top bar reaches behind the status bar (#462): hand the strip's frost
+            // the bar's own backdrop so both bend the same field.
+            Frost top = null;
             if (found != null) {
                 for (Object each : frosts.values()) {
                     Frost frost = (Frost) each;
-                    if (!frost.tabBar && frost.host == host && frost.reachesStrip(found)) {
-                        if (strip != null) dropStrip();
-                        Drawable background = found.getBackground();
-                        if (background != null) makeSeeThrough(background, true);
-                        return;
+                    if (!frost.tabBar && frost.host == host) {
+                        top = frost;
+                        break;
                     }
                 }
             }
             StripFrost frost = (StripFrost) strip;
-            if (frost != null && (frost.strip != found || frost.host != host)) {
+            if (frost != null && (frost.strip != found || frost.host != host || frost.bar != top)) {
                 dropStrip();
                 frost = null;
             }
@@ -1441,7 +1429,7 @@ public final class TranslucentBars {
             }
             if (frost == null) {
                 float radius = FROST_RADIUS_DP * found.getResources().getDisplayMetrics().density;
-                frost = new StripFrost(found, host, radius);
+                frost = new StripFrost(found, host, radius, top);
                 strip = frost;
                 HookStatus.counted(FAMILY, STRIP_FROSTED);
                 Logger.printDebug(() -> "See-through bars: frosting the status bar strip " + box(found)
@@ -1493,6 +1481,8 @@ public final class TranslucentBars {
         private final int[] origin = new int[2];
         /** The recorded part of the host, in its coordinates, and record's scratch box. */
         private final Rect inside = new Rect();
+        /** [inside] reached up over the status bar strip, for the glass's own recording. */
+        private final Rect reach = new Rect();
         private final Rect box = new Rect();
         /** The bar's fills on screen in the window this frame, for the bend's boxes. */
         private final Rect areaWindow = new Rect();
@@ -1517,6 +1507,8 @@ public final class TranslucentBars {
         private int bendTold;
         /** The bar's own height on screen, for the bend's band when the frost reaches past it. */
         private int barHigh;
+        /** The status bar strip's height above a top bar, which its glass reaches up over. */
+        private int stripHigh;
         int frame;
 
         Frost(View bar, View host, float radius, boolean tabBar) {
@@ -1535,10 +1527,11 @@ public final class TranslucentBars {
          * Records what's under [area], the bar's fills on screen in the window, drawn as much as
          * [shown], with [corner] the radius of its corners for a rounded tab bar's pill (0 is square).
          */
-        void update(Rect area, float shown, int frame, float corner, int barHigh) {
+        void update(Rect area, float shown, int frame, float corner, int barHigh, int stripHigh) {
             this.frame = frame;
             this.shownAlpha = Math.round(shown * 255);
             this.barHigh = barHigh;
+            this.stripHigh = tabBar ? 0 : stripHigh;
             areaWindow.set(area);
             this.corner = corner;
             if (getBounds().width() != host.getWidth() || getBounds().height() != host.getHeight()) {
@@ -1551,7 +1544,7 @@ public final class TranslucentBars {
             int height = area.height();
             node.setPosition(left, top, left + width, top + height);
             node.setAlpha(shown);
-            glass.setPosition(left, top, left + width, top + height);
+            glass.setPosition(left, top - stripHigh, left + width, top - stripHigh + height + stripHigh);
             glass.setAlpha(shown);
             if (corner > 0f) {
                 outline.setRoundRect(0, 0, width, height, corner);
@@ -1577,13 +1570,25 @@ public final class TranslucentBars {
             }
             // The sharp copy the bend samples, recorded once at full size while the bend is on.
             // Its own recording, not the blur's: a node drawn into another keeps its position
-            // outside that canvas's transform, which would land the blur off the bar.
+            // outside that canvas's transform, which would land the blur off the bar. For the
+            // top bar it reaches stripHigh past the bar's top, the strip's share filled with the
+            // bar's own top rows, so the strip bends the same field as the bar, one slab of
+            // glass the way HushGram's top bar reaches behind the status bar (#462).
             if (width > 0 && height > 0 && GlassRefraction.on() && GlassRefraction.supported()) {
-                RecordingCanvas sharp = glass.beginRecording(width, height);
+                int unionHigh = height + stripHigh;
+                reach.set(left, top - stripHigh, left + width, top + height);
+                RecordingCanvas sharp = glass.beginRecording(width, unionHigh);
                 recording = true;
                 try {
-                    sharp.translate(-left, -top);
-                    record(host, sharp, inside, box);
+                    sharp.translate(-left, stripHigh - top);
+                    record(host, sharp, reach, box);
+                    if (stripHigh > 0) {
+                        sharp.save();
+                        sharp.clipRect(0, 0, width, stripHigh);
+                        sharp.translate(0, -stripHigh);
+                        record(host, sharp, reach, box);
+                        sharp.restore();
+                    }
                 } finally {
                     recording = false;
                     glass.endRecording();
@@ -1671,6 +1676,20 @@ public final class TranslucentBars {
                 // corners and not only at the rim.
                 dome().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, corner,
                         across, DOME_ALPHA);
+            } else if (!tabBar && stripHigh > 0) {
+                // The top bar's glass reaches up over the status bar strip as one slab
+                // (#462): the bend's box covers the strip and the bar together and is
+                // clipped to the bar, so the strip's own bend continues the same field.
+                int unionHigh = high + stripHigh;
+                int saved = canvas.save();
+                canvas.clipRect(inside.left, inside.top, inside.left + wide, inside.top + high);
+                rimBox.set(-across, -across, wide + across, unionHigh);
+                rim().paint(canvas, glass, inside.left, inside.top - stripHigh, wide, unionHigh,
+                        rimBox, 0f, across);
+                rimBox.set(0, 0, wide, unionHigh);
+                dome().paint(canvas, glass, inside.left, inside.top - stripHigh, wide, unionHigh,
+                        rimBox, 0f, across, DOME_ALPHA);
+                canvas.restoreToCount(saved);
             } else {
                 rimBox.set(-high, -high, wide + high, high);
                 rim().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, 0f, across);
@@ -1705,22 +1724,6 @@ public final class TranslucentBars {
             return dome;
         }
 
-        /**
-         * Whether this frost's recording reaches up over [strip], in [host]'s coordinates, so the
-         * strip needs no frost of its own: the top bar's frost already covers it, the way
-         * HushGram's top bar glass reaches behind the status bar (#462).
-         */
-        boolean reachesStrip(View strip) {
-            int[] stripAt = new int[2];
-            int[] hostAt = new int[2];
-            strip.getLocationInWindow(stripAt);
-            host.getLocationInWindow(hostAt);
-            int left = stripAt[0] - hostAt[0];
-            int top = stripAt[1] - hostAt[1];
-            return inside.top >= 0 && inside.top <= top
-                    && inside.left <= left && inside.right >= left + strip.getWidth();
-        }
-
         @Override
         public void setAlpha(int alpha) {
         }
@@ -1750,6 +1753,8 @@ public final class TranslucentBars {
         private static final float GLASS_ALPHA = 0.5f;
         final View strip;
         final View host;
+        /** The top bar's frost, whose glass the strip bends as one slab with, or null. */
+        @Nullable final Frost bar;
         final RenderNode node = new RenderNode("Hushfacebook strip frost");
         final RenderNode blur = new RenderNode("Hushfacebook strip frost blur");
         /** The band copied sharp, which the liquid glass bend bends, and it turned over for the strip. */
@@ -1757,6 +1762,8 @@ public final class TranslucentBars {
         final RenderNode glassSrc = new RenderNode("Hushfacebook strip glass turned");
         @Nullable private GlassRefraction bend;
         private final RectF stripBox = new RectF();
+        /** The strip and bar's union in window coordinates, for the shared bend's box. */
+        private final RectF unionBox = new RectF();
         /** The band copied, in [host]'s coordinates, and record's scratch box. */
         final Rect band = new Rect();
         private final Rect box = new Rect();
@@ -1764,9 +1771,10 @@ public final class TranslucentBars {
         private final int[] hostOrigin = new int[2];
         int frame;
 
-        StripFrost(View strip, View host, float radius) {
+        StripFrost(View strip, View host, float radius, @Nullable Frost bar) {
             this.strip = strip;
             this.host = host;
+            this.bar = bar;
             float small = radius / FROST_SCALE;
             blur.setRenderEffect(RenderEffect.createBlurEffect(small, small, Shader.TileMode.CLAMP));
             blur.setClipToBounds(true);
@@ -1854,6 +1862,28 @@ public final class TranslucentBars {
             int width = getBounds().width();
             int height = getBounds().height();
             if (width <= 0 || height <= 0 || !GlassRefraction.on() || !GlassRefraction.supported()) return;
+            Frost top = bar;
+            if (top != null && top.frosted && top.stripHigh > 0) {
+                // One slab with the top bar, the way HushGram's top reaches behind the status
+                // bar (#462): the strip bends the bar's own glass through the same union box,
+                // clipped to the strip, so the bend runs the same way across both.
+                int wide = top.inside.width();
+                int unionHigh = top.inside.height() + height;
+                if (wide > 0 && unionHigh > 0) {
+                    int saved = canvas.save();
+                    canvas.clipRect(0, 0, width, height);
+                    RenderNode glass = top.glass;
+                    glass.setPosition(0, 0, wide, unionHigh);
+                    unionBox.set(0, 0, wide, unionHigh);
+                    if (bend == null) bend = new GlassRefraction(false);
+                    bend.paint(canvas, glass, 0, 0, wide, unionHigh, unionBox, 0f, top.barHigh,
+                            Frost.DOME_ALPHA);
+                    glass.setPosition(top.inside.left, top.inside.top - height,
+                            top.inside.left + wide, top.inside.top - height + unionHigh);
+                    canvas.restoreToCount(saved);
+                    return;
+                }
+            }
             stripBox.set(0, 0, width, height);
             if (bend == null) bend = new GlassRefraction(false);
             bend.paint(canvas, glassSrc, 0, 0, width, height, stripBox, 0f,
