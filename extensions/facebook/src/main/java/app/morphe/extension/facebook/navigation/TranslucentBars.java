@@ -913,6 +913,8 @@ public final class TranslucentBars {
             }
             frame++;
             int height = window.getHeight();
+            int stripInset = statusBarTop(window);
+            View stripView = seeThrough ? stripOf(window, stripInset) : null;
             boolean blurs = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && window.isHardwareAccelerated();
             // The top of the tab bar's rows on screen, when they're along the bottom.
             int cover = Integer.MAX_VALUE;
@@ -955,8 +957,10 @@ public final class TranslucentBars {
                 if (under != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     keepInside(seen, rows, height);
                     float corner = keepInPill(seen, bar, pill);
+                    if (holdsTopBar && stripView != null) includeStrip(seen, stripView);
                     if (shown > 0f && !seen.isEmpty()) {
-                        frost(bar, under, seen, shown, corner, tabBar.equals(anchor.getClass().getName()));
+                        frost(bar, under, seen, shown, corner, rows.height(),
+                                tabBar.equals(anchor.getClass().getName()));
                     } else {
                         // Slid or faded out of sight: its frost waits, empty, for it to come back.
                         Frost waiting = (Frost) frosts.get(bar);
@@ -1006,6 +1010,18 @@ public final class TranslucentBars {
             retryBooked = false;
             View window = this.window.get();
             if (window != null && !stopped) window.invalidate();
+        }
+
+        /**
+         * Extends the top bar's frost [seen] up over the status bar strip, so the strip and the
+         * bar frost as the one slab of glass HushGram's top bar reaches up into (#462): one
+         * backdrop, one bend, no seam.
+         */
+        private void includeStrip(Rect seen, View strip) {
+            strip.getLocationInWindow(origin);
+            seen.top = Math.min(seen.top, origin[1]);
+            seen.left = Math.min(seen.left, origin[0]);
+            seen.right = Math.max(seen.right, origin[0] + strip.getWidth());
         }
 
         /**
@@ -1375,7 +1391,8 @@ public final class TranslucentBars {
         }
 
         @RequiresApi(Build.VERSION_CODES.S)
-        private void frost(View bar, View under, Rect area, float shown, float corner, boolean tabBar) {
+        private void frost(View bar, View under, Rect area, float shown, float corner, int barHigh,
+                boolean tabBar) {
             Frost frost = (Frost) frosts.get(bar);
             if (frost != null && (frost.host != under || frost.tabBar != tabBar)) {
                 frost.remove();
@@ -1387,7 +1404,7 @@ public final class TranslucentBars {
                 frosts.put(bar, frost);
                 HookStatus.counted(FAMILY, FROSTED);
             }
-            frost.update(area, shown, frame, corner);
+            frost.update(area, shown, frame, corner, barHigh);
         }
 
         /**
@@ -1397,6 +1414,19 @@ public final class TranslucentBars {
         @RequiresApi(Build.VERSION_CODES.S)
         void frostStrip(View window, @Nullable View host, int inset) {
             View found = host == null ? null : stripOf(window, inset);
+            // The top bar's frost reaching up over the strip is the one slab of glass HushGram's
+            // top bar makes: the strip only needs its fill see-through for it to show through.
+            if (found != null) {
+                for (Object each : frosts.values()) {
+                    Frost frost = (Frost) each;
+                    if (!frost.tabBar && frost.host == host && frost.reachesStrip(found)) {
+                        if (strip != null) dropStrip();
+                        Drawable background = found.getBackground();
+                        if (background != null) makeSeeThrough(background, true);
+                        return;
+                    }
+                }
+            }
             StripFrost frost = (StripFrost) strip;
             if (frost != null && (frost.strip != found || frost.host != host)) {
                 dropStrip();
@@ -1485,6 +1515,8 @@ public final class TranslucentBars {
         private boolean frosted;
         /** How many bend-check logs were written, for diagnosing a bend that never draws. */
         private int bendTold;
+        /** The bar's own height on screen, for the bend's band when the frost reaches past it. */
+        private int barHigh;
         int frame;
 
         Frost(View bar, View host, float radius, boolean tabBar) {
@@ -1503,9 +1535,10 @@ public final class TranslucentBars {
          * Records what's under [area], the bar's fills on screen in the window, drawn as much as
          * [shown], with [corner] the radius of its corners for a rounded tab bar's pill (0 is square).
          */
-        void update(Rect area, float shown, int frame, float corner) {
+        void update(Rect area, float shown, int frame, float corner, int barHigh) {
             this.frame = frame;
             this.shownAlpha = Math.round(shown * 255);
+            this.barHigh = barHigh;
             areaWindow.set(area);
             this.corner = corner;
             if (getBounds().width() != host.getWidth() || getBounds().height() != host.getHeight()) {
@@ -1628,23 +1661,25 @@ public final class TranslucentBars {
             int wide = inside.width();
             int high = inside.height();
             if (wide <= 0 || high <= 0) return;
+            // The bend's band is measured on the bar's own height, not on the frost reaching up
+            // over the status bar, the way HushGram measures the top bar's rim on the header.
+            float across = Math.min(wide, tabBar ? high : Math.max(1, barHigh));
             if (corner > 0f) {
                 rimBox.set(0, 0, wide, high);
-                rim().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, corner,
-                        Math.min(wide, high));
+                rim().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, corner, across);
                 // The whole pill domes a little over the frost, so the glass reads in from its
                 // corners and not only at the rim.
                 dome().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, corner,
-                        Math.min(wide, high), DOME_ALPHA);
+                        across, DOME_ALPHA);
             } else {
                 rimBox.set(-high, -high, wide + high, high);
-                rim().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, 0f, high);
+                rim().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, 0f, across);
                 // The top bar domes over its whole face too, so it and the status bar strip's
                 // dome read as the one slab of glass HushGram's top runs up into the strip.
                 if (!tabBar) {
                     rimBox.set(0, 0, wide, high);
                     dome().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, 0f,
-                            Math.min(wide, high), DOME_ALPHA);
+                            across, DOME_ALPHA);
                 }
             }
             if (!tabBar || !RoundedTabBar.spotInWindow(bar, spot)) return;
@@ -1668,6 +1703,22 @@ public final class TranslucentBars {
         private GlassRefraction dome() {
             if (dome == null) dome = new GlassRefraction(false);
             return dome;
+        }
+
+        /**
+         * Whether this frost's recording reaches up over [strip], in [host]'s coordinates, so the
+         * strip needs no frost of its own: the top bar's frost already covers it, the way
+         * HushGram's top bar glass reaches behind the status bar (#462).
+         */
+        boolean reachesStrip(View strip) {
+            int[] stripAt = new int[2];
+            int[] hostAt = new int[2];
+            strip.getLocationInWindow(stripAt);
+            host.getLocationInWindow(hostAt);
+            int left = stripAt[0] - hostAt[0];
+            int top = stripAt[1] - hostAt[1];
+            return inside.top >= 0 && inside.top <= top
+                    && inside.left <= left && inside.right >= left + strip.getWidth();
         }
 
         @Override
