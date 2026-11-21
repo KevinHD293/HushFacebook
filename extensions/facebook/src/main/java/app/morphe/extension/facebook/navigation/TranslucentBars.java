@@ -1779,6 +1779,8 @@ public final class TranslucentBars {
         private final RectF stripBox = new RectF();
         /** The strip and bar's union in window coordinates, for the shared bend's box. */
         private final RectF unionBox = new RectF();
+        /** Which draw path was last logged: 0 none, 1 the bar's slab, 2 its own frost. */
+        private int toldPath;
         /** The band copied, in [host]'s coordinates, and record's scratch box. */
         final Rect band = new Rect();
         private final Rect box = new Rect();
@@ -1892,6 +1894,10 @@ public final class TranslucentBars {
                 int wide = top.inside.width();
                 int unionHigh = top.inside.height() + top.stripHigh;
                 if (wide > 0 && unionHigh > 0) {
+                    if (toldPath != 1) {
+                        toldPath = 1;
+                        Logger.printDebug(() -> "See-through bars: strip draws the top bar's slab");
+                    }
                     int px = top.inside.left;
                     int py = top.inside.top - top.stripHigh;
                     int saved = canvas.save();
@@ -1911,6 +1917,11 @@ public final class TranslucentBars {
                     canvas.restoreToCount(saved);
                     return;
                 }
+            }
+            if (toldPath != 2) {
+                toldPath = 2;
+                Logger.printDebug(() -> "See-through bars: strip draws its own frost, bar=" + top
+                        + (top == null ? "" : " frosted=" + top.frosted + " stripHigh=" + top.stripHigh));
             }
             canvas.drawRenderNode(node);
             if (width <= 0 || height <= 0 || !GlassRefraction.on() || !GlassRefraction.supported()) return;
