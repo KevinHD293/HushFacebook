@@ -1746,11 +1746,11 @@ public final class TranslucentBars {
             blur.endRecording();
             turnOver(node.beginRecording(width, height), blur, height, tint);
             node.endRecording();
-            // And the same band turned over sharp, for the bend to sample.
+            // And the same band sharp way up, for the bend to sample: the frost below turns its
+            // copy over to meet the top bar's frost, but the glass keeps the band's own way up,
+            // so its bend runs the same way as the top bar's, on into the strip.
             glassSrc.setPosition(0, 0, width, height);
             RecordingCanvas turned = glassSrc.beginRecording(width, height);
-            turned.translate(0, height);
-            turned.scale(1f, -1f);
             turned.translate(-band.left, -band.top);
             turned.drawRenderNode(sharp);
             glassSrc.endRecording();
