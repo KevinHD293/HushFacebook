@@ -969,8 +969,7 @@ public final class TranslucentBars {
             if (!seeThrough) return;
             forgetUnseen();
             dropStaleFrost();
-            // BISECT: strip frost disabled to isolate the tab bar frost loss.
-            // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) frostStrip(window, topHost, statusBarTop(window));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) frostStrip(window, topHost, statusBarTop(window));
         }
 
         /**
@@ -1533,9 +1532,20 @@ public final class TranslucentBars {
             int smallWidth = small(width);
             int smallHeight = small(height);
             blur.setPosition(0, 0, smallWidth, smallHeight);
+            RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
+            recording = true;
+            try {
+                canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
+                canvas.translate(-left, -top);
+                record(host, canvas, inside, box);
+            } finally {
+                recording = false;
+                blur.endRecording();
+            }
+            // The sharp copy the bend samples, recorded once at full size while the bend is on.
+            // Its own recording, not the blur's: a node drawn into another keeps its position
+            // outside that canvas's transform, which would land the blur off the bar.
             if (width > 0 && height > 0 && GlassRefraction.on() && GlassRefraction.supported()) {
-                // The sharp copy the bend samples, recorded once at full size, and the blur
-                // derived from it, so the bend and the frost see the same frame.
                 RecordingCanvas sharp = glass.beginRecording(width, height);
                 recording = true;
                 try {
@@ -1545,23 +1555,7 @@ public final class TranslucentBars {
                     recording = false;
                     glass.endRecording();
                 }
-                RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
-                canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
-                canvas.translate(-left, -top);
-                canvas.drawRenderNode(glass);
-                blur.endRecording();
             } else {
-                // No bend to feed: record straight into the small blur, as the frost always did.
-                RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
-                recording = true;
-                try {
-                    canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
-                    canvas.translate(-left, -top);
-                    record(host, canvas, inside, box);
-                } finally {
-                    recording = false;
-                    blur.endRecording();
-                }
                 glass.discardDisplayList();
             }
             RecordingCanvas whole = node.beginRecording(width, height);
@@ -1753,15 +1747,21 @@ public final class TranslucentBars {
                 copying = false;
                 sharp.endRecording();
             }
-            // Drawn FROST_SCALE times smaller and blurred there.
+            // Drawn FROST_SCALE times smaller and blurred there, recorded straight from the host:
+            // a node drawn into another keeps its position outside that canvas's transform.
             int smallWidth = Frost.small(width);
             int smallHeight = Frost.small(height);
             blur.setPosition(0, 0, smallWidth, smallHeight);
             RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
-            canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
-            canvas.translate(-band.left, -band.top);
-            canvas.drawRenderNode(sharp);
-            blur.endRecording();
+            copying = true;
+            try {
+                canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
+                canvas.translate(-band.left, -band.top);
+                record(host, canvas, band, box);
+            } finally {
+                copying = false;
+                blur.endRecording();
+            }
             turnOver(node.beginRecording(width, height), blur, height, tint);
             node.endRecording();
             // And the same band sharp way up, for the bend to sample: the frost below turns its
