@@ -163,6 +163,51 @@ public final class RoundedTabBar {
         return out.height() / 2f;
     }
 
+    /**
+     * The spot behind the selected tab of [bar] on screen, in the window, into [out], for the
+     * liquid glass bend to magnify under it: false when the bar isn't a pill or no tab wears the
+     * spot. Measured the way {@link #pillInWindow} measures the pill, through the bar's scale.
+     */
+    static boolean spotInWindow(View bar, Rect out) {
+        Shape shape = SHAPED.get(bar);
+        if (shape == null || !(bar.getParent() instanceof View) || !(bar instanceof ViewGroup)) return false;
+        ViewGroup group = (ViewGroup) bar;
+        Rect box = new Rect();
+        int[] at = new int[2];
+        ((View) bar.getParent()).getLocationInWindow(at);
+        for (Map.Entry<View, Spotted> entry : SPOTTED.entrySet()) {
+            View tab = entry.getKey();
+            Spotted spotted = entry.getValue();
+            if (spotted.spot.area.isEmpty() || !under(tab, bar)) continue;
+            box.set(0, 0, tab.getWidth(), tab.getHeight());
+            group.offsetDescendantRectToMyCoords(tab, box);
+            int left = box.left + spotted.spot.area.left;
+            int top = box.top + spotted.spot.area.top;
+            int right = box.left + spotted.spot.area.right;
+            int bottom = box.top + spotted.spot.area.bottom;
+            float baseX = at[0] + bar.getLeft() + bar.getTranslationX();
+            float baseY = at[1] + bar.getTop() + bar.getTranslationY();
+            float pivotX = bar.getPivotX();
+            float pivotY = bar.getPivotY();
+            float scaleX = bar.getScaleX();
+            float scaleY = bar.getScaleY();
+            out.set(Math.round(baseX + pivotX + scaleX * (left - pivotX)),
+                    Math.round(baseY + pivotY + scaleY * (top - pivotY)),
+                    Math.round(baseX + pivotX + scaleX * (right - pivotX)),
+                    Math.round(baseY + pivotY + scaleY * (bottom - pivotY)));
+            return true;
+        }
+        return false;
+    }
+
+    /** Whether [view] is [ancestor] or inside it. */
+    private static boolean under(View view, View ancestor) {
+        for (View at = view; at != null; at = at.getParent() instanceof View ? (View) at.getParent() : null) {
+            if (at == ancestor) return true;
+        }
+        return false;
+    }
+
     /** The Tab bar width [saved] picks, in percent, held to its range: {@link #DEFAULT_WIDTH} when blank. */
     public static int widthPercent(@Nullable String saved) {
         return TranslucentBars.percent(saved, MIN_WIDTH, MAX_WIDTH, DEFAULT_WIDTH);

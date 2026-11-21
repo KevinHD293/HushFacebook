@@ -3128,6 +3128,24 @@ public class Settings extends BaseSettings {
             new StringSetting("hushfacebook_tab_bar_height", "");
 
     /**
+     * The see-through bars bend light like liquid glass: the blur at a bar's edge mirrors the way
+     * the edge of real glass does, and the rounded tab bar's spot behind the selected tab
+     * magnifies it a little, on Android 13 and newer
+     * ({@link app.morphe.extension.facebook.navigation.GlassRefraction}). Needs See-through bars for the
+     * frost to bend. Asked as each frame of the main screen draws, so a change shows right away.
+     */
+    public static final BooleanSetting LIQUID_GLASS_BARS =
+            new BooleanSetting("hushfacebook_liquid_glass_bars", FALSE);
+
+    /**
+     * How far the liquid glass bends, a percent, digits only, blank for the standard amount
+     * ({@link app.morphe.extension.facebook.navigation.GlassRefraction#bendPercent}). Not a switch.
+     * Asked as each frame of the main screen draws.
+     */
+    public static final StringSetting GLASS_BEND =
+            new StringSetting("hushfacebook_glass_bend", "");
+
+    /**
      * Android's status bar goes from Facebook's main screen, a swipe down from the top edge showing
      * it for a moment (#124, {@link app.morphe.extension.facebook.navigation.HiddenStatusBar}).
      * Asked as the main screen resumes, gets its focus back or lays itself out, so a change shows

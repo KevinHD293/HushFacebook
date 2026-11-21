@@ -93,6 +93,7 @@ import app.morphe.extension.facebook.theme.MarkColors;
 import app.morphe.extension.facebook.theme.MarkColors.Mark;
 import app.morphe.extension.facebook.navigation.HiddenTabs;
 import app.morphe.extension.facebook.navigation.FeedsSubtab;
+import app.morphe.extension.facebook.navigation.GlassRefraction;
 import app.morphe.extension.facebook.navigation.StartTab;
 import app.morphe.extension.facebook.navigation.MarketplaceOnly;
 import app.morphe.extension.facebook.navigation.RoundedTabBar;
@@ -2815,6 +2816,21 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
     /** What the Tab bar height row says for [text], the digits typed there. */
     static String tabBarHeightSummary(String text) {
         return L10n.f("The rounded tab bar keeps %1$s percent of its height.", RoundedTabBar.heightPercent(text));
+    }
+
+    /** Liquid glass's Glass bend row. */
+    static ValueRows.PercentRow glassBendRow(Context context) {
+        return percentRow(context, Settings.GLASS_BEND, L10n.t("Glass bend"),
+                L10n.f("How far the liquid glass bends the blur at the bars' edges and under the selected tab, in "
+                        + "percent, from %1$s to %2$s. Leave it blank for %3$s.", GlassRefraction.MIN_BEND,
+                        GlassRefraction.MAX_BEND, GlassRefraction.DEFAULT_BEND),
+                GlassRefraction.DEFAULT_BEND, HushfacebookPreferenceFragment::glassBendSummary);
+    }
+
+    /** What the Glass bend row says for [text], the digits typed there. */
+    static String glassBendSummary(String text) {
+        return L10n.f("The liquid glass bends %1$s percent of its standard amount.",
+                GlassRefraction.bendPercent(text));
     }
 
     /** What the Emoji after the logo row says for [text], the emoji typed there. */

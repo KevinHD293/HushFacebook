@@ -244,6 +244,13 @@ final class HushfacebookPages {
                             + "the bottom of the screen, with a soft highlight behind the tab you're on.")));
             appearance.addPreference(HushfacebookPreferenceFragment.tabBarWidthRow(context));
             appearance.addPreference(HushfacebookPreferenceFragment.tabBarHeightRow(context));
+            // Asked as each frame of the main screen draws too, so a change shows right away.
+            // Needs See-through bars for the frost to bend, and Android 13 for the shader.
+            appearance.addPreference(toggle(context, Settings.LIQUID_GLASS_BARS,
+                    L10n.t("On Android 13 and newer, with See-through bars on, the blur at a bar's edge bends "
+                            + "like liquid glass, and the spot behind the selected tab magnifies what's under it. "
+                            + "Glass bend sets how far it bends.")));
+            appearance.addPreference(HushfacebookPreferenceFragment.glassBendRow(context));
             // Asked as the main screen gets its focus back, so a change shows when these settings close.
             appearance.addPreference(toggle(context, Settings.HIDE_STATUS_BAR,
                     L10n.t("Takes the phone's status bar, with the time and battery, off Facebook's main screen, so "

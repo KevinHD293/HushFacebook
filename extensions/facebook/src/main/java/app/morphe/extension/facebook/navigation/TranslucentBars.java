@@ -15,6 +15,7 @@ import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.RecordingCanvas;
 import android.graphics.RenderEffect;
 import android.graphics.RenderNode;
@@ -900,8 +901,14 @@ public final class TranslucentBars {
                 if (under != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     keepInside(seen, rows, height);
                     float corner = keepInPill(seen, bar, pill);
+                    // Liquid glass reaches up behind the status bar on the top bar, the way
+                    // HushGram's top bar does, so its frost and bend cover the strip too.
+                    if (corner == 0f && GlassRefraction.on() && GlassRefraction.supported()
+                            && topBar.equals(anchor.getClass().getName())) {
+                        seen.top = 0;
+                    }
                     if (shown > 0f && !seen.isEmpty()) {
-                        frost(bar, under, seen, shown, corner);
+                        frost(bar, under, seen, shown, corner, tabBar.equals(anchor.getClass().getName()));
                     } else {
                         // Slid or faded out of sight: its frost waits, empty, for it to come back.
                         Frost waiting = (Frost) frosts.get(bar);
@@ -1318,15 +1325,15 @@ public final class TranslucentBars {
         }
 
         @RequiresApi(Build.VERSION_CODES.S)
-        private void frost(View bar, View under, Rect area, float shown, float corner) {
+        private void frost(View bar, View under, Rect area, float shown, float corner, boolean tabBar) {
             Frost frost = (Frost) frosts.get(bar);
-            if (frost != null && frost.host != under) {
+            if (frost != null && (frost.host != under || frost.tabBar != tabBar)) {
                 frost.remove();
                 frost = null;
             }
             if (frost == null) {
                 float radius = FROST_RADIUS_DP * bar.getResources().getDisplayMetrics().density;
-                frost = new Frost(under, radius);
+                frost = new Frost(bar, under, radius, tabBar);
                 frosts.put(bar, frost);
                 HookStatus.counted(FAMILY, FROSTED);
             }
@@ -1356,22 +1363,46 @@ public final class TranslucentBars {
      */
     @RequiresApi(Build.VERSION_CODES.S)
     static final class Frost extends Drawable {
+        /** How much of the pill's dome shows over its frost, so the glass reads without hiding it. */
+        private static final float DOME_ALPHA = 0.4f;
         final View host;
+        /** The bar this frost is for, for the liquid glass bend's selected-tab spot. */
+        private final View bar;
+        /** Whether [bar] is the tab bar, the only bar whose selected tab gets the bend's bubble. */
+        private final boolean tabBar;
         final RenderNode node = new RenderNode("Hushfacebook frost");
         final RenderNode blur = new RenderNode("Hushfacebook frost blur");
+        /** The same recording unblurred, which the liquid glass bend bends instead of the frost. */
+        final RenderNode glass = new RenderNode("Hushfacebook glass");
         private final int[] origin = new int[2];
         /** The recorded part of the host, in its coordinates, and record's scratch box. */
         private final Rect inside = new Rect();
         private final Rect box = new Rect();
-        /** The pill's corners, for a rounded tab bar (#344). */
+        /** The bar's fills on screen in the window this frame, for the bend's boxes. */
+        private final Rect areaWindow = new Rect();
+        /** The spot behind the selected tab, in the window, and the bend's boxes in the node's coordinates. */
+        private final Rect spot = new Rect();
+        private final RectF rimBox = new RectF();
+        private final RectF bubbleBox = new RectF();
+        /** The pill's corners, for a rounded tab bar (#344), and the bend's rim and bubble. */
         private final Outline outline = new Outline();
+        private float corner;
+        @Nullable private GlassRefraction rim;
+        @Nullable private GlassRefraction bubble;
+        @Nullable private GlassRefraction dome;
         private boolean recording;
         /** Whether it was drawn yet, for the debug log. */
         private boolean drawn;
+        /** Whether this frame's recording has anything under the bar to bend. */
+        private boolean frosted;
+        /** How many bend-check logs were written, for diagnosing a bend that never draws. */
+        private int bendTold;
         int frame;
 
-        Frost(View host, float radius) {
+        Frost(View bar, View host, float radius, boolean tabBar) {
+            this.bar = bar;
             this.host = host;
+            this.tabBar = tabBar;
             float small = radius / FROST_SCALE;
             blur.setRenderEffect(RenderEffect.createBlurEffect(small, small, Shader.TileMode.CLAMP));
             blur.setClipToBounds(true);
@@ -1386,6 +1417,8 @@ public final class TranslucentBars {
          */
         void update(Rect area, float shown, int frame, float corner) {
             this.frame = frame;
+            areaWindow.set(area);
+            this.corner = corner;
             if (getBounds().width() != host.getWidth() || getBounds().height() != host.getHeight()) {
                 setBounds(0, 0, host.getWidth(), host.getHeight());
             }
@@ -1396,6 +1429,8 @@ public final class TranslucentBars {
             int height = area.height();
             node.setPosition(left, top, left + width, top + height);
             node.setAlpha(shown);
+            glass.setPosition(left, top, left + width, top + height);
+            glass.setAlpha(shown);
             if (corner > 0f) {
                 outline.setRoundRect(0, 0, width, height, corner);
                 node.setOutline(outline);
@@ -1403,25 +1438,31 @@ public final class TranslucentBars {
                 node.setOutline(null);
             }
             node.setClipToOutline(corner > 0f);
+            inside.set(left, top, left + width, top + height);
+            // The sharp copy the bend samples, recorded once at full size.
+            RecordingCanvas sharp = glass.beginRecording(width, height);
+            recording = true;
+            try {
+                sharp.translate(-left, -top);
+                record(host, sharp, inside, box);
+            } finally {
+                recording = false;
+                glass.endRecording();
+            }
             // Drawn FROST_SCALE times smaller and blurred there, then drawn back at full size.
             int smallWidth = small(width);
             int smallHeight = small(height);
             blur.setPosition(0, 0, smallWidth, smallHeight);
             RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
-            recording = true;
-            try {
-                canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
-                canvas.translate(-left, -top);
-                inside.set(left, top, left + width, top + height);
-                record(host, canvas, inside, box);
-            } finally {
-                recording = false;
-                blur.endRecording();
-            }
+            canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
+            canvas.translate(-left, -top);
+            canvas.drawRenderNode(glass);
+            blur.endRecording();
             RecordingCanvas whole = node.beginRecording(width, height);
             whole.scale(FROST_SCALE, FROST_SCALE);
             whole.drawRenderNode(blur);
             node.endRecording();
+            frosted = width > 0 && height > 0;
         }
 
         /** [size] pixels drawn {@link #FROST_SCALE} times smaller, rounded up so the copy covers it all. */
@@ -1432,16 +1473,22 @@ public final class TranslucentBars {
         /** Draws nothing this frame, for a bar out of sight. */
         void empty(int frame) {
             this.frame = frame;
+            frosted = false;
             node.setPosition(0, 0, 0, 0);
             node.beginRecording(0, 0);
             node.endRecording();
             blur.discardDisplayList();
+            glass.discardDisplayList();
         }
 
         void remove() {
             host.getOverlay().remove(this);
             node.discardDisplayList();
             blur.discardDisplayList();
+            glass.discardDisplayList();
+            if (rim != null) rim.discard();
+            if (bubble != null) bubble.discard();
+            if (dome != null) dome.discard();
         }
 
         @Override
@@ -1453,12 +1500,67 @@ public final class TranslucentBars {
             int saved = canvas.save();
             canvas.translate(host.getScrollX(), host.getScrollY());
             canvas.drawRenderNode(node);
+            bend(canvas);
             canvas.restoreToCount(saved);
             if (!drawn) {
                 drawn = true;
                 Logger.printDebug(() -> "See-through bars: frost drawn in " + host.getClass().getSimpleName()
                         + " scrolled " + host.getScrollX() + "," + host.getScrollY());
             }
+        }
+
+        /**
+         * The liquid glass bend over the frost, while Liquid glass on the bars is on and this
+         * Android has shaders: the rounded tab bar's pill bends all the way round, the top bar and
+         * an unrounded tab bar only along the bottom edge, with the box running past the glass on
+         * its other three, and the spot behind the selected tab magnifies the blur into a bubble,
+         * the way HushGram's glass tab bar does it.
+         */
+        private void bend(Canvas canvas) {
+            if (bendTold < 10) {
+                bendTold++;
+                Logger.printDebug(() -> "Liquid glass: bend check frosted=" + frosted
+                        + " on=" + GlassRefraction.on() + " supported=" + GlassRefraction.supported()
+                        + " inside=" + inside.width() + "x" + inside.height()
+                        + " tabBar=" + tabBar);
+            }
+            if (!frosted || !GlassRefraction.on() || !GlassRefraction.supported()) return;
+            int wide = inside.width();
+            int high = inside.height();
+            if (wide <= 0 || high <= 0) return;
+            if (corner > 0f) {
+                rimBox.set(0, 0, wide, high);
+                rim().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, corner,
+                        Math.min(wide, high));
+                // The whole pill domes a little over the frost, so the glass reads in from its
+                // corners and not only at the rim.
+                dome().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, corner,
+                        Math.min(wide, high), DOME_ALPHA);
+            } else {
+                rimBox.set(-high, -high, wide + high, high);
+                rim().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, 0f, high);
+            }
+            if (!tabBar || !RoundedTabBar.spotInWindow(bar, spot)) return;
+            bubbleBox.set(spot.left - areaWindow.left, spot.top - areaWindow.top,
+                    spot.right - areaWindow.left, spot.bottom - areaWindow.top);
+            if (bubbleBox.width() <= 0 || bubbleBox.height() <= 0) return;
+            bubble().paint(canvas, glass, inside.left, inside.top, wide, high, bubbleBox,
+                    bubbleBox.height() / 2f);
+        }
+
+        private GlassRefraction rim() {
+            if (rim == null) rim = new GlassRefraction();
+            return rim;
+        }
+
+        private GlassRefraction bubble() {
+            if (bubble == null) bubble = new GlassRefraction(false);
+            return bubble;
+        }
+
+        private GlassRefraction dome() {
+            if (dome == null) dome = new GlassRefraction(false);
+            return dome;
         }
 
         @Override

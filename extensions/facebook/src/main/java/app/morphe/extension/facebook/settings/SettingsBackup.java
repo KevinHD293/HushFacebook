@@ -491,6 +491,7 @@ public final class SettingsBackup {
             Settings.HIDE_REELS_TAB_BAR,
             Settings.TRANSLUCENT_BARS,
             Settings.ROUNDED_TAB_BAR,
+            Settings.LIQUID_GLASS_BARS,
             Settings.HIDE_STATUS_BAR,
             Settings.LIGHT_REELS_TAB_BARS,
             Settings.HIDE_MESSENGER_BUTTON,

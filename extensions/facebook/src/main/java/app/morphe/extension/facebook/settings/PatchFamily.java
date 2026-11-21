@@ -290,7 +290,7 @@ public enum PatchFamily {
     BOTTOM_TAB_BAR(FamilyNames.BOTTOM_TAB_BAR, "bottomTabBar", null,
             Settings.BOTTOM_TAB_BAR, Settings.TOP_TAB_BAR, Settings.TAB_BAR_SCROLL_AWAY, Settings.KEEP_TAB_BAR,
             Settings.KEEP_TOP_BAR,
-            Settings.PHONE_LAYOUT_ON_BIG_SCREENS, Settings.TRANSLUCENT_BARS, Settings.ROUNDED_TAB_BAR, Settings.HIDE_STATUS_BAR,
+            Settings.PHONE_LAYOUT_ON_BIG_SCREENS, Settings.TRANSLUCENT_BARS, Settings.ROUNDED_TAB_BAR, Settings.LIQUID_GLASS_BARS, Settings.HIDE_STATUS_BAR,
             Settings.LIGHT_REELS_TAB_BARS, Settings.HIDE_REELS_TAB_BAR,
             Settings.HIDE_MESSENGER_BUTTON, Settings.HIDE_MESSENGER_COUNT, Settings.HIDE_FACEBOOK_LOGO,
             Settings.HIDE_CREATE_BUTTON, Settings.HIDE_SEARCH_BUTTON, Settings.SEARCH_WITH_PICTURE),
