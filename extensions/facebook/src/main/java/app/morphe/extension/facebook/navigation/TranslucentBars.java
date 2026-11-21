@@ -1570,9 +1570,13 @@ public final class TranslucentBars {
                 canvas.translate(-left, stripHigh - top);
                 record(host, canvas, reach, box);
                 if (stripHigh > 0) {
+                    // The strip's share, turned over the way the strip frost always was: the
+                    // bar's top row lies along the seam, so the one frost reads unbroken.
                     canvas.save();
-                    canvas.clipRect(0, 0, smallWidth, small(stripHigh) + 1);
-                    canvas.translate(0, -stripHigh);
+                    canvas.clipRect(0, 0, width, stripHigh + FROST_SCALE);
+                    canvas.translate(0, top);
+                    canvas.scale(1f, -1f);
+                    canvas.translate(0, -top);
                     record(host, canvas, reach, box);
                     canvas.restore();
                 }
@@ -1595,7 +1599,9 @@ public final class TranslucentBars {
                     if (stripHigh > 0) {
                         sharp.save();
                         sharp.clipRect(0, 0, width, stripHigh);
-                        sharp.translate(0, -stripHigh);
+                        sharp.translate(0, top);
+                        sharp.scale(1f, -1f);
+                        sharp.translate(0, -top);
                         record(host, sharp, reach, box);
                         sharp.restore();
                     }
