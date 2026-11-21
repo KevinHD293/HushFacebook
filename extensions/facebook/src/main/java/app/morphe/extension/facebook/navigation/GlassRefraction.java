@@ -18,9 +18,10 @@ import app.morphe.extension.shared.Logger;
 import app.morphe.extension.shared.Utils;
 
 /**
- * The bend in the see-through bars' liquid glass, on Android 13 and newer: the sharp backdrop a
- * bar's frost recorded before it was blurred, drawn through a small shader that magnifies it a
- * little in the middle and bends it more toward the edge, as glass would. It runs through the
+ * The bend in the see-through bars' liquid glass, on Android 13 and newer: the bar's blurred
+ * backdrop, the same recording the frost draws, through a small shader that magnifies it a
+ * little in the middle and bends it more toward the edge, as glass would — the way HushGram's
+ * GlassLens works over its one blurred backdrop. It runs through the
  * shader into a render node of its own, so nothing is read back and no view is touched. Before
  * Android 13 there is no shader to run and the bars keep their plain frost. A failure turns the
  * bend off for that bar and the frost carries on.
@@ -72,10 +73,11 @@ public final class GlassRefraction {
             + "}\n";
 
     /**
-     * The pill's rim: within {@link #RIM_BAND} of the edge the sharp backdrop is mirrored across
-     * the band's inner line, as {@link #rimSource} works out, so what runs under the edge shows
-     * upside down and moves the other way, as it does through the edge of real glass. Past the
-     * band the bend draws nothing, so the frost underneath shows through.
+     * The pill's rim, the way HushGram's GlassLens draws it: within {@link #RIM_BAND} of the edge
+     * the blurred backdrop is mirrored across the band's inner line, as {@link #rimSource} works
+     * out, so what runs under the edge shows upside down and moves the other way, as it does
+     * through the edge of real glass. Past the band the shader draws the backdrop unchanged, so
+     * only the band differs from the frost underneath.
      */
     private static final String RIM_SHADER = ""
             + "uniform shader content;\n"
@@ -93,9 +95,8 @@ public final class GlassRefraction {
             + "  float2 normal = q.x > 0.0 && q.y > 0.0 ? normalize(q) * side\n"
             + "      : (q.x > q.y ? float2(side.x, 0.0) : float2(0.0, side.y));\n"
             + "  float depth = max(0.0, -d);\n"
-            + "  float mask = 1.0 - smoothstep(0.0, band, depth);\n"
-            + "  float2 source = p - normal * (2.0 * (band - depth));\n"
-            + "  return content.eval(source) * (inside * mask);\n"
+            + "  float2 source = depth < band ? p - normal * (2.0 * (band - depth)) : p;\n"
+            + "  return content.eval(source) * inside;\n"
             + "}\n";
 
     /** How deep the rim's mirrored band reaches into the glass, as a share of half its shorter side. */

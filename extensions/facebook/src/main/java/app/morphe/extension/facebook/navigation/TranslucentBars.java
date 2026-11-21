@@ -7,9 +7,11 @@ package app.morphe.extension.facebook.navigation;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
+import android.graphics.LinearGradient;
 import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
@@ -250,6 +252,13 @@ public final class TranslucentBars {
     public static final int MIN_OPACITY = 0;
     /** The highest, the bars as solid as Facebook draws them. */
     public static final int MAX_OPACITY = 100;
+
+    /** The lowest Blur a person can pick, in percent of the stock blur: none at all. */
+    public static final int MIN_BLUR = 0;
+    /** The highest, three times the stock blur. */
+    public static final int MAX_BLUR = 300;
+    /** What's picked with no Blur saved, in percent. */
+    public static final int DEFAULT_BLUR = 45;
     /** What's kept with no opacity picked, in percent, for the row's summary: {@link #PLAIN_ALPHA}. */
     public static final int PLAIN_PERCENT = Math.round(PLAIN_ALPHA * 100f / 255f);
     /** The same over frost: {@link #FROSTED_ALPHA}. */
@@ -1360,17 +1369,15 @@ public final class TranslucentBars {
      */
     @RequiresApi(Build.VERSION_CODES.S)
     static final class Frost extends Drawable {
-        /** How much of the pill's dome shows over its frost, so the glass reads without hiding it. */
-        private static final float DOME_ALPHA = 0.22f;
         final View host;
         /** The bar this frost is for, for the liquid glass bend's selected-tab spot. */
         private final View bar;
+        /** The display density, for the glass sheen's and edge's widths. */
+        private final float density;
         /** Whether [bar] is the tab bar, the only bar whose selected tab gets the bend's bubble. */
         private final boolean tabBar;
         final RenderNode node = new RenderNode("Hushfacebook frost");
         final RenderNode blur = new RenderNode("Hushfacebook frost blur");
-        /** The same recording unblurred, which the liquid glass bend bends instead of the frost. */
-        final RenderNode glass = new RenderNode("Hushfacebook glass");
         private final int[] origin = new int[2];
         /** The recorded part of the host, in its coordinates, and record's scratch box. */
         private final Rect inside = new Rect();
@@ -1388,10 +1395,18 @@ public final class TranslucentBars {
         private float corner;
         @Nullable private GlassRefraction rim;
         @Nullable private GlassRefraction bubble;
-        @Nullable private GlassRefraction dome;
+        /** The glass sheen's paint and edge's stroke, and the sheen gradient's last box. */
+        private final Paint sheenPaint = new Paint();
+        private final Paint edgePaint = new Paint();
+        private int sheenTop = -1;
+        private int sheenBottom = -1;
+        private boolean sheenDark;
         private boolean recording;
         /** Whether it was drawn yet, for the debug log. */
         private boolean drawn;
+        /** The blur's sigma at the stock amount, and the Blur percent last set on the effect. */
+        private final float blurSmall;
+        private int blurPct = -1;
         /** Whether this frame's recording has anything under the bar to bend. */
         private boolean frosted;
         /** How many bend-check logs were written, for diagnosing a bend that never draws. */
@@ -1404,7 +1419,10 @@ public final class TranslucentBars {
             this.bar = bar;
             this.host = host;
             this.tabBar = tabBar;
+            density = bar.getResources().getDisplayMetrics().density;
+            edgePaint.setStyle(Paint.Style.STROKE);
             float small = radius / FROST_SCALE;
+            blurSmall = small;
             blur.setRenderEffect(RenderEffect.createBlurEffect(small, small, Shader.TileMode.CLAMP));
             blur.setClipToBounds(true);
             node.setClipToBounds(true);
@@ -1430,10 +1448,16 @@ public final class TranslucentBars {
             int top = area.top - origin[1];
             int width = area.width();
             int height = area.height();
+            int picked = Utils.settingsReady()
+                    ? percent(Settings.FROST_BLUR.get(), MIN_BLUR, MAX_BLUR, DEFAULT_BLUR)
+                    : DEFAULT_BLUR;
+            if (picked != blurPct) {
+                blurPct = picked;
+                float sigma = blurSmall * picked / 100f;
+                blur.setRenderEffect(RenderEffect.createBlurEffect(sigma, sigma, Shader.TileMode.CLAMP));
+            }
             node.setPosition(left, top, left + width, top + height);
             node.setAlpha(shown);
-            glass.setPosition(left, top, left + width, top + height);
-            glass.setAlpha(shown);
             if (corner > 0f) {
                 outline.setRoundRect(0, 0, width, height, corner);
                 node.setOutline(outline);
@@ -1456,22 +1480,6 @@ public final class TranslucentBars {
                 recording = false;
                 blur.endRecording();
             }
-            // The sharp copy the bend samples, recorded once at full size while the bend is on.
-            // Its own recording, not the blur's: a node drawn into another keeps its position
-            // outside that canvas's transform, which would land the blur off the bar.
-            if (width > 0 && height > 0 && GlassRefraction.on() && GlassRefraction.supported()) {
-                RecordingCanvas sharp = glass.beginRecording(width, height);
-                recording = true;
-                try {
-                    sharp.translate(-left, -top);
-                    record(host, sharp, inside, box);
-                } finally {
-                    recording = false;
-                    glass.endRecording();
-                }
-            } else {
-                glass.discardDisplayList();
-            }
             RecordingCanvas whole = node.beginRecording(width, height);
             whole.scale(FROST_SCALE, FROST_SCALE);
             whole.drawRenderNode(blur);
@@ -1492,17 +1500,14 @@ public final class TranslucentBars {
             node.beginRecording(0, 0);
             node.endRecording();
             blur.discardDisplayList();
-            glass.discardDisplayList();
         }
 
         void remove() {
             host.getOverlay().remove(this);
             node.discardDisplayList();
             blur.discardDisplayList();
-            glass.discardDisplayList();
             if (rim != null) rim.discard();
             if (bubble != null) bubble.discard();
-            if (dome != null) dome.discard();
         }
 
         @Override
@@ -1515,6 +1520,7 @@ public final class TranslucentBars {
             canvas.translate(host.getScrollX(), host.getScrollY());
             canvas.drawRenderNode(node);
             bend(canvas);
+            sheen(canvas);
             canvas.restoreToCount(saved);
             if (!drawn) {
                 drawn = true;
@@ -1546,28 +1552,51 @@ public final class TranslucentBars {
             float across = Math.min(wide, tabBar ? high : Math.max(1, barHigh));
             if (corner > 0f) {
                 rimBox.set(0, 0, wide, high);
-                rim().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, corner, across);
-                // The whole pill domes a little over the frost, so the glass reads in from its
-                // corners and not only at the rim.
-                dome().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, corner,
-                        across, DOME_ALPHA);
+                rim().paint(canvas, node, inside.left, inside.top, wide, high, rimBox, corner, across);
             } else {
                 rimBox.set(-high, -high, wide + high, high);
-                rim().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, 0f, across);
-                // The top bar domes over its whole face too, so the glass reads across the bar
-                // and not only at its bottom edge.
-                if (!tabBar) {
-                    rimBox.set(0, 0, wide, high);
-                    dome().paint(canvas, glass, inside.left, inside.top, wide, high, rimBox, 0f,
-                            across, DOME_ALPHA);
-                }
+                rim().paint(canvas, node, inside.left, inside.top, wide, high, rimBox, 0f, across);
             }
             if (!tabBar || !RoundedTabBar.spotInWindow(bar, spot)) return;
             bubbleBox.set(spot.left - areaWindow.left, spot.top - areaWindow.top,
                     spot.right - areaWindow.left, spot.bottom - areaWindow.top);
             if (bubbleBox.width() <= 0 || bubbleBox.height() <= 0) return;
-            bubble().paint(canvas, glass, inside.left, inside.top, wide, high, bubbleBox,
+            bubble().paint(canvas, node, inside.left, inside.top, wide, high, bubbleBox,
                     bubbleBox.height() / 2f);
+        }
+
+        /**
+         * The glass sheen and hairline edge HushGram's pill draws over its blur: a soft light
+         * at the top fading to the bottom, and a one-pixel outline, both in the lighter shade
+         * on dark glass and the fainter one on light.
+         */
+        private void sheen(Canvas canvas) {
+            if (!frosted || !GlassRefraction.on() || !GlassRefraction.supported()) return;
+            boolean dark = darkGlass();
+            if (sheenTop != inside.top || sheenBottom != inside.bottom || sheenDark != dark) {
+                sheenTop = inside.top;
+                sheenBottom = inside.bottom;
+                sheenDark = dark;
+                sheenPaint.setShader(new LinearGradient(0, inside.top, 0, inside.bottom,
+                        dark ? 0x22ffffff : 0x40ffffff, 0x00ffffff, Shader.TileMode.CLAMP));
+            }
+            float radius = Math.min(corner, inside.height() / 2f);
+            sheenPaint.setAlpha(shownAlpha);
+            canvas.drawRoundRect(inside.left, inside.top, inside.right, inside.bottom,
+                    radius, radius, sheenPaint);
+            edgePaint.setColor(dark ? 0x33ffffff : 0x1f000000);
+            edgePaint.setAlpha(shownAlpha);
+            edgePaint.setStrokeWidth(Math.max(1f, density));
+            float half = edgePaint.getStrokeWidth() / 2f;
+            canvas.drawRoundRect(inside.left + half, inside.top + half,
+                    inside.right - half, inside.bottom - half, radius, radius, edgePaint);
+        }
+
+        /** Whether the bar's glass reads dark, from the window's night mode. */
+        private boolean darkGlass() {
+            return (bar.getResources().getConfiguration().uiMode
+                    & Configuration.UI_MODE_NIGHT_MASK)
+                    == Configuration.UI_MODE_NIGHT_YES;
         }
 
         private GlassRefraction rim() {
@@ -1578,11 +1607,6 @@ public final class TranslucentBars {
         private GlassRefraction bubble() {
             if (bubble == null) bubble = new GlassRefraction(false);
             return bubble;
-        }
-
-        private GlassRefraction dome() {
-            if (dome == null) dome = new GlassRefraction(false);
-            return dome;
         }
 
         @Override

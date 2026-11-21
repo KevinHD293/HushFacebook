@@ -2772,6 +2772,22 @@ public final class HushfacebookPreferenceFragment extends AbstractPreferenceFrag
         return L10n.f("The see-through bars keep %1$s percent of their color.", picked);
     }
 
+    /** See-through bars' Blur row: how strong the frost's blur is. */
+    static ValueRows.PercentRow blurRow(Context context) {
+        return percentRow(context, Settings.FROST_BLUR, L10n.t("Blur"),
+                L10n.f("How strongly the see-through bars blur the feed behind them, in percent of the stock "
+                        + "amount, from %1$s to %2$s. Leave it blank for %3$s.", TranslucentBars.MIN_BLUR,
+                        TranslucentBars.MAX_BLUR, TranslucentBars.DEFAULT_BLUR),
+                TranslucentBars.DEFAULT_BLUR, HushfacebookPreferenceFragment::blurSummary);
+    }
+
+    /** What the Blur row says for [text], the digits typed there. */
+    static String blurSummary(String text) {
+        return L10n.f("The bars' frost blurs at %1$s percent of its stock amount.",
+                TranslucentBars.percent(text, TranslucentBars.MIN_BLUR, TranslucentBars.MAX_BLUR,
+                        TranslucentBars.DEFAULT_BLUR));
+    }
+
     /** Box darkness, for every dark box behind captions and names (#490). */
     static ValueRows.PercentRow boxDarknessRow(Context context) {
         return percentRow(context, Settings.TEXT_BOX_DARKNESS, L10n.t("Box darkness"),
