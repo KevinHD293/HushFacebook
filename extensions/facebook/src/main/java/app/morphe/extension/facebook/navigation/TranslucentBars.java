@@ -1372,8 +1372,6 @@ public final class TranslucentBars {
         final View host;
         /** The bar this frost is for, for the liquid glass bend's selected-tab spot. */
         private final View bar;
-        /** The display density, for the glass sheen's and edge's widths. */
-        private final float density;
         /** Whether [bar] is the tab bar, the only bar whose selected tab gets the bend's bubble. */
         private final boolean tabBar;
         final RenderNode node = new RenderNode("Hushfacebook frost");
@@ -1395,9 +1393,8 @@ public final class TranslucentBars {
         private float corner;
         @Nullable private GlassRefraction rim;
         @Nullable private GlassRefraction bubble;
-        /** The glass sheen's paint and edge's stroke, and the sheen gradient's last box. */
+        /** The glass sheen's paint and the sheen gradient's last box. */
         private final Paint sheenPaint = new Paint();
-        private final Paint edgePaint = new Paint();
         private int sheenTop = -1;
         private int sheenBottom = -1;
         private boolean sheenDark;
@@ -1419,8 +1416,6 @@ public final class TranslucentBars {
             this.bar = bar;
             this.host = host;
             this.tabBar = tabBar;
-            density = bar.getResources().getDisplayMetrics().density;
-            edgePaint.setStyle(Paint.Style.STROKE);
             float small = radius / FROST_SCALE;
             blurSmall = small;
             blur.setRenderEffect(RenderEffect.createBlurEffect(small, small, Shader.TileMode.CLAMP));
@@ -1566,9 +1561,8 @@ public final class TranslucentBars {
         }
 
         /**
-         * The glass sheen and hairline edge HushGram's pill draws over its blur: a soft light
-         * at the top fading to the bottom, and a one-pixel outline, both in the lighter shade
-         * on dark glass and the fainter one on light.
+         * The glass sheen HushGram's pill draws over its blur: a soft light at the top fading
+         * to the bottom, in the lighter shade on dark glass and the brighter one on light.
          */
         private void sheen(Canvas canvas) {
             if (!frosted || !GlassRefraction.on() || !GlassRefraction.supported()) return;
@@ -1584,12 +1578,6 @@ public final class TranslucentBars {
             sheenPaint.setAlpha(shownAlpha);
             canvas.drawRoundRect(inside.left, inside.top, inside.right, inside.bottom,
                     radius, radius, sheenPaint);
-            edgePaint.setColor(dark ? 0x33ffffff : 0x1f000000);
-            edgePaint.setAlpha(shownAlpha);
-            edgePaint.setStrokeWidth(Math.max(1f, density));
-            float half = edgePaint.getStrokeWidth() / 2f;
-            canvas.drawRoundRect(inside.left + half, inside.top + half,
-                    inside.right - half, inside.bottom - half, radius, radius, edgePaint);
         }
 
         /** Whether the bar's glass reads dark, from the window's night mode. */
