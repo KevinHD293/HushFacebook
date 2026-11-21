@@ -1542,9 +1542,10 @@ public final class TranslucentBars {
             int top = area.top - origin[1];
             int width = area.width();
             int height = area.height();
-            node.setPosition(left, top, left + width, top + height);
+            int unionHigh = height + stripHigh;
+            node.setPosition(left, top - stripHigh, left + width, top - stripHigh + unionHigh);
             node.setAlpha(shown);
-            glass.setPosition(left, top - stripHigh, left + width, top - stripHigh + height + stripHigh);
+            glass.setPosition(left, top - stripHigh, left + width, top - stripHigh + unionHigh);
             glass.setAlpha(shown);
             if (corner > 0f) {
                 outline.setRoundRect(0, 0, width, height, corner);
@@ -1554,16 +1555,27 @@ public final class TranslucentBars {
             }
             node.setClipToOutline(corner > 0f);
             inside.set(left, top, left + width, top + height);
+            reach.set(left, top - stripHigh, left + width, top + height);
             // Drawn FROST_SCALE times smaller and blurred there, then drawn back at full size.
+            // The top bar's frost reaches stripHigh over the status bar strip too, the strip's
+            // share filled with the bar's own top rows, so strip and bar frost as the one slab
+            // of glass HushGram's top bar reaches up into (#462).
             int smallWidth = small(width);
-            int smallHeight = small(height);
+            int smallHeight = small(unionHigh);
             blur.setPosition(0, 0, smallWidth, smallHeight);
             RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
             recording = true;
             try {
                 canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
-                canvas.translate(-left, -top);
-                record(host, canvas, inside, box);
+                canvas.translate(-left, stripHigh - top);
+                record(host, canvas, reach, box);
+                if (stripHigh > 0) {
+                    canvas.save();
+                    canvas.clipRect(0, 0, smallWidth, small(stripHigh) + 1);
+                    canvas.translate(0, -stripHigh);
+                    record(host, canvas, reach, box);
+                    canvas.restore();
+                }
             } finally {
                 recording = false;
                 blur.endRecording();
@@ -1575,8 +1587,6 @@ public final class TranslucentBars {
             // bar's own top rows, so the strip bends the same field as the bar, one slab of
             // glass the way HushGram's top bar reaches behind the status bar (#462).
             if (width > 0 && height > 0 && GlassRefraction.on() && GlassRefraction.supported()) {
-                int unionHigh = height + stripHigh;
-                reach.set(left, top - stripHigh, left + width, top + height);
                 RecordingCanvas sharp = glass.beginRecording(width, unionHigh);
                 recording = true;
                 try {
@@ -1596,7 +1606,7 @@ public final class TranslucentBars {
             } else {
                 glass.discardDisplayList();
             }
-            RecordingCanvas whole = node.beginRecording(width, height);
+            RecordingCanvas whole = node.beginRecording(width, unionHigh);
             whole.scale(FROST_SCALE, FROST_SCALE);
             whole.drawRenderNode(blur);
             node.endRecording();
@@ -1637,6 +1647,11 @@ public final class TranslucentBars {
             // shows, the way record() copies it.
             int saved = canvas.save();
             canvas.translate(host.getScrollX(), host.getScrollY());
+            // The frost reaches over the status bar strip as one slab: the bar draws only its
+            // share, the strip's share is the strip frost's to draw from the same node.
+            if (stripHigh > 0) {
+                canvas.clipRect(inside.left, inside.top, inside.right, inside.bottom);
+            }
             canvas.drawRenderNode(node);
             bend(canvas);
             canvas.restoreToCount(saved);
@@ -1770,6 +1785,7 @@ public final class TranslucentBars {
         private final int[] stripOrigin = new int[2];
         private final int[] hostOrigin = new int[2];
         int frame;
+        private int tint;
 
         StripFrost(View strip, View host, float radius, @Nullable Frost bar) {
             this.strip = strip;
@@ -1786,6 +1802,13 @@ public final class TranslucentBars {
         /** Copies the band under the strip again and draws it turned over under [tint]. */
         void update(int tint, int frame) {
             this.frame = frame;
+            this.tint = tint;
+            // While the top bar's frost reaches over the strip, the strip records nothing of its
+            // own: it draws the strip's share of the bar's nodes, the same slab of glass.
+            Frost barTop = bar;
+            if (barTop != null && barTop.frosted && barTop.stripHigh > 0) {
+                return;
+            }
             int width = strip.getWidth();
             int height = strip.getHeight();
             if (getBounds().width() != width || getBounds().height() != height) setBounds(0, 0, width, height);
@@ -1858,32 +1881,39 @@ public final class TranslucentBars {
         @Override
         public void draw(Canvas canvas) {
             if (copying || !canvas.isHardwareAccelerated()) return;
-            canvas.drawRenderNode(node);
             int width = getBounds().width();
             int height = getBounds().height();
-            if (width <= 0 || height <= 0 || !GlassRefraction.on() || !GlassRefraction.supported()) return;
             Frost top = bar;
             if (top != null && top.frosted && top.stripHigh > 0) {
                 // One slab with the top bar, the way HushGram's top reaches behind the status
-                // bar (#462): the strip bends the bar's own glass through the same union box,
-                // clipped to the strip, so the bend runs the same way across both.
+                // bar (#462): the strip draws the strip's share of the bar's own frost node
+                // under its own tint, and bends the bar's glass through the same union box,
+                // so frost, bend and seam are all the one field across both.
                 int wide = top.inside.width();
-                int unionHigh = top.inside.height() + height;
+                int unionHigh = top.inside.height() + top.stripHigh;
                 if (wide > 0 && unionHigh > 0) {
+                    int px = top.inside.left;
+                    int py = top.inside.top - top.stripHigh;
                     int saved = canvas.save();
                     canvas.clipRect(0, 0, width, height);
-                    RenderNode glass = top.glass;
-                    glass.setPosition(0, 0, wide, unionHigh);
+                    top.node.setPosition(0, 0, wide, unionHigh);
+                    top.glass.setPosition(0, 0, wide, unionHigh);
+                    canvas.drawRenderNode(top.node);
+                    canvas.drawColor(tint);
                     unionBox.set(0, 0, wide, unionHigh);
-                    if (bend == null) bend = new GlassRefraction(false);
-                    bend.paint(canvas, glass, 0, 0, wide, unionHigh, unionBox, 0f, top.barHigh,
-                            Frost.DOME_ALPHA);
-                    glass.setPosition(top.inside.left, top.inside.top - height,
-                            top.inside.left + wide, top.inside.top - height + unionHigh);
+                    if (GlassRefraction.on() && GlassRefraction.supported()) {
+                        if (bend == null) bend = new GlassRefraction(false);
+                        bend.paint(canvas, top.glass, 0, 0, wide, unionHigh, unionBox, 0f,
+                                top.barHigh, Frost.DOME_ALPHA);
+                    }
+                    top.node.setPosition(px, py, px + wide, py + unionHigh);
+                    top.glass.setPosition(px, py, px + wide, py + unionHigh);
                     canvas.restoreToCount(saved);
                     return;
                 }
             }
+            canvas.drawRenderNode(node);
+            if (width <= 0 || height <= 0 || !GlassRefraction.on() || !GlassRefraction.supported()) return;
             stripBox.set(0, 0, width, height);
             if (bend == null) bend = new GlassRefraction(false);
             bend.paint(canvas, glassSrc, 0, 0, width, height, stripBox, 0f,
