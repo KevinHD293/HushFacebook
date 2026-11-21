@@ -969,7 +969,8 @@ public final class TranslucentBars {
             if (!seeThrough) return;
             forgetUnseen();
             dropStaleFrost();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) frostStrip(window, topHost, statusBarTop(window));
+            // BISECT: strip frost disabled to isolate the tab bar frost loss.
+            // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) frostStrip(window, topHost, statusBarTop(window));
         }
 
         /**
@@ -1478,6 +1479,7 @@ public final class TranslucentBars {
         @Nullable private GlassRefraction rim;
         @Nullable private GlassRefraction bubble;
         @Nullable private GlassRefraction dome;
+        private boolean recording;
         /** Whether it was drawn yet, for the debug log. */
         private boolean drawn;
         /** Whether this frame's recording has anything under the bar to bend. */
@@ -1527,25 +1529,41 @@ public final class TranslucentBars {
             }
             node.setClipToOutline(corner > 0f);
             inside.set(left, top, left + width, top + height);
-            // The sharp copy the bend samples, recorded once at full size.
-            RecordingCanvas sharp = glass.beginRecording(width, height);
-            copying = true;
-            try {
-                sharp.translate(-left, -top);
-                record(host, sharp, inside, box);
-            } finally {
-                copying = false;
-                glass.endRecording();
-            }
             // Drawn FROST_SCALE times smaller and blurred there, then drawn back at full size.
             int smallWidth = small(width);
             int smallHeight = small(height);
             blur.setPosition(0, 0, smallWidth, smallHeight);
-            RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
-            canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
-            canvas.translate(-left, -top);
-            canvas.drawRenderNode(glass);
-            blur.endRecording();
+            if (width > 0 && height > 0 && GlassRefraction.on() && GlassRefraction.supported()) {
+                // The sharp copy the bend samples, recorded once at full size, and the blur
+                // derived from it, so the bend and the frost see the same frame.
+                RecordingCanvas sharp = glass.beginRecording(width, height);
+                recording = true;
+                try {
+                    sharp.translate(-left, -top);
+                    record(host, sharp, inside, box);
+                } finally {
+                    recording = false;
+                    glass.endRecording();
+                }
+                RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
+                canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
+                canvas.translate(-left, -top);
+                canvas.drawRenderNode(glass);
+                blur.endRecording();
+            } else {
+                // No bend to feed: record straight into the small blur, as the frost always did.
+                RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
+                recording = true;
+                try {
+                    canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
+                    canvas.translate(-left, -top);
+                    record(host, canvas, inside, box);
+                } finally {
+                    recording = false;
+                    blur.endRecording();
+                }
+                glass.discardDisplayList();
+            }
             RecordingCanvas whole = node.beginRecording(width, height);
             whole.scale(FROST_SCALE, FROST_SCALE);
             whole.drawRenderNode(blur);
@@ -1581,7 +1599,7 @@ public final class TranslucentBars {
 
         @Override
         public void draw(Canvas canvas) {
-            if (copying || !canvas.isHardwareAccelerated()) return;
+            if (recording || copying || !canvas.isHardwareAccelerated()) return;
             // An overlay draws in its host's scrolled content (View translates by -scroll first), so
             // a scrolled host would put the frost off by its scroll. [node] sits where the host
             // shows, the way record() copies it.
