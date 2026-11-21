@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.Outline;
 import android.graphics.Paint;
@@ -20,6 +21,7 @@ import android.graphics.RecordingCanvas;
 import android.graphics.RenderEffect;
 import android.graphics.RenderNode;
 import android.graphics.Shader;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.RippleDrawable;
 import android.os.Build;
@@ -28,6 +30,7 @@ import android.os.SystemClock;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
@@ -174,6 +177,11 @@ public final class TranslucentBars {
     static final String LEFT_SHORT = "Page left stopping at the tab bar";
     /** Counted each time a paging list keeps its gap and gets black under it instead (#412). */
     static final String BACKED = "Paging list given black under the tab bar";
+    /** Counted each time the strip Facebook paints behind the status bar gets its frost (#507). */
+    static final String STRIP_FROSTED = "Status bar strip frosted";
+
+    /** Whether a frost is copying a view now, so no frost draws itself into the copy. */
+    static boolean copying;
 
     private static final String FAMILY = FamilyNames.BOTTOM_TAB_BAR;
 
@@ -301,6 +309,44 @@ public final class TranslucentBars {
     static boolean fills(View view, @Nullable Drawable drawn, View bar, int row) {
         if (drawn == null || drawn instanceof RippleDrawable) return false;
         return bar.getWidth() > 0 && view.getWidth() * 10 >= bar.getWidth() * 9 && view.getHeight() * 2 >= row;
+    }
+
+    /** The status bar's height at the top of [window], 0 when there's no inset to frost over. */
+    static int statusBarTop(View window) {
+        WindowInsets insets = window.getRootWindowInsets();
+        return insets == null ? 0 : insets.getInsets(WindowInsets.Type.statusBars()).top;
+    }
+
+    /**
+     * The strip Facebook paints behind the status bar over [window], or null (#507). With the app
+     * drawn edge to edge, as Android 15 has it, Facebook lays its screen out below the status bar
+     * and fills the gap with a plain view of the top bar's colour: a child of the content view along
+     * its top, the whole width and [inset], the status bar's height, tall. Nothing of the feed runs
+     * behind it, so the bars went see-through and the strip stayed solid above them.
+     */
+    @Nullable
+    static View stripOf(View window, int inset) {
+        if (inset <= 0) return null;
+        View content = window.getRootView().findViewById(android.R.id.content);
+        if (!(content instanceof ViewGroup)) return null;
+        ViewGroup group = (ViewGroup) content;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View child = group.getChildAt(i);
+            if (child instanceof ViewGroup || child.getVisibility() != View.VISIBLE) continue;
+            if (child.getLeft() != 0 || child.getTop() != 0 || child.getWidth() != group.getWidth()
+                    || child.getHeight() != inset) continue;
+            Drawable background = child.getBackground();
+            if (background instanceof ColorDrawable && Color.alpha(((ColorDrawable) background).getColor()) > 0) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    /** The colour drawn over [strip]'s frost: its own, as see-through as a frosted bar's fill. */
+    static int stripTint(View strip) {
+        int colour = ((ColorDrawable) strip.getBackground()).getColor();
+        return (seeThrough(Color.alpha(colour), true) << 24) | (colour & 0xFFFFFF);
     }
 
     /**
@@ -789,6 +835,9 @@ public final class TranslucentBars {
         final Map<Drawable, Fill> fills = new IdentityHashMap<>();
         /** Each bar's frost, by the bar. */
         private final Map<View, Object> frosts = new IdentityHashMap<>();
+        /** The frost of the strip Facebook paints behind the status bar, or null (#507). */
+        Object strip;
+        private boolean describedNoStrip;
         /**
          * The part of one bar's fills on screen this frame, in the window, one fill's or anchor's
          * part (also the surface check's scratch box), and the bar's rows.
@@ -869,6 +918,8 @@ public final class TranslucentBars {
             int cover = Integer.MAX_VALUE;
             boolean stretchLooked = false;
             boolean stretchWaits = false;
+            // The view under the top bar, which the strip behind the status bar is frosted from.
+            View topHost = null;
             for (int i = 0; i < anchors.size(); i++) {
                 View anchor = shown(i);
                 if (anchor == null) continue;
@@ -877,11 +928,13 @@ public final class TranslucentBars {
                 // With the tab bar at the top, both anchors share one holder: one pass, both rows.
                 int row = bar.getHeight();
                 rows.setEmpty();
+                boolean holdsTopBar = false;
                 for (int k = i; k < anchors.size(); k++) {
                     View other = shown(k);
                     if (other == null || barOf(other, height) != bar) continue;
                     if (other.getHeight() > 0) row = Math.min(row, other.getHeight());
                     if (other.getGlobalVisibleRect(visible)) rows.union(visible);
+                    if (topBar.equals(other.getClass().getName())) holdsTopBar = true;
                 }
                 boolean tabsBelow = tabBar.equals(anchor.getClass().getName()) && rows.top > height / 2;
                 if (tabsBelow) cover = Math.min(cover, rows.top);
@@ -896,17 +949,12 @@ public final class TranslucentBars {
                 }
                 if (!seeThrough) continue;
                 View under = blurs ? underNow(bar, rows) : null;
+                if (holdsTopBar && under != null) topHost = under;
                 seen.setEmpty();
                 float shown = keep(bar, bar, row, under != null, 1f, 0);
                 if (under != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     keepInside(seen, rows, height);
                     float corner = keepInPill(seen, bar, pill);
-                    // Liquid glass reaches up behind the status bar on the top bar, the way
-                    // HushGram's top bar does, so its frost and bend cover the strip too.
-                    if (corner == 0f && GlassRefraction.on() && GlassRefraction.supported()
-                            && topBar.equals(anchor.getClass().getName())) {
-                        seen.top = 0;
-                    }
                     if (shown > 0f && !seen.isEmpty()) {
                         frost(bar, under, seen, shown, corner, tabBar.equals(anchor.getClass().getName()));
                     } else {
@@ -921,6 +969,7 @@ public final class TranslucentBars {
             if (!seeThrough) return;
             forgetUnseen();
             dropStaleFrost();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) frostStrip(window, topHost, statusBarTop(window));
         }
 
         /**
@@ -1290,7 +1339,8 @@ public final class TranslucentBars {
 
         /** Every fill gets Facebook's alpha back and the frost goes. Stretched pages stay stretched. */
         private void giveBackFills() {
-            if (fills.isEmpty() && frosts.isEmpty()) return;
+            if (fills.isEmpty() && frosts.isEmpty() && strip == null) return;
+            dropStrip();
             for (Map.Entry<Drawable, Fill> entry : fills.entrySet()) giveBack(entry.getKey(), entry.getValue());
             if (!fills.isEmpty()) HookStatus.counted(FAMILY, GIVEN_BACK);
             fills.clear();
@@ -1338,6 +1388,42 @@ public final class TranslucentBars {
                 HookStatus.counted(FAMILY, FROSTED);
             }
             frost.update(area, shown, frame, corner);
+        }
+
+        /**
+         * Frosts the strip Facebook paints behind the status bar from [host], the view under the top
+         * bar, or takes its frost away when there's no strip or no host this frame (#507).
+         */
+        @RequiresApi(Build.VERSION_CODES.S)
+        void frostStrip(View window, @Nullable View host, int inset) {
+            View found = host == null ? null : stripOf(window, inset);
+            StripFrost frost = (StripFrost) strip;
+            if (frost != null && (frost.strip != found || frost.host != host)) {
+                dropStrip();
+                frost = null;
+            }
+            if (found == null) {
+                if (host != null && !describedNoStrip) {
+                    describedNoStrip = true;
+                    Logger.printDebug(() -> "See-through bars: no status bar strip, inset " + inset);
+                }
+                return;
+            }
+            if (frost == null) {
+                float radius = FROST_RADIUS_DP * found.getResources().getDisplayMetrics().density;
+                frost = new StripFrost(found, host, radius);
+                strip = frost;
+                HookStatus.counted(FAMILY, STRIP_FROSTED);
+                Logger.printDebug(() -> "See-through bars: frosting the status bar strip " + box(found)
+                        + " from " + host.getClass().getSimpleName());
+            }
+            frost.update(stripTint(found), frame);
+        }
+
+        /** Takes the strip's frost away, leaving the strip as Facebook paints it. */
+        private void dropStrip() {
+            if (strip != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) ((StripFrost) strip).remove();
+            strip = null;
         }
 
         /** Takes away the frost of each bar that wasn't drawn this frame. */
@@ -1390,7 +1476,6 @@ public final class TranslucentBars {
         @Nullable private GlassRefraction rim;
         @Nullable private GlassRefraction bubble;
         @Nullable private GlassRefraction dome;
-        private boolean recording;
         /** Whether it was drawn yet, for the debug log. */
         private boolean drawn;
         /** Whether this frame's recording has anything under the bar to bend. */
@@ -1441,12 +1526,12 @@ public final class TranslucentBars {
             inside.set(left, top, left + width, top + height);
             // The sharp copy the bend samples, recorded once at full size.
             RecordingCanvas sharp = glass.beginRecording(width, height);
-            recording = true;
+            copying = true;
             try {
                 sharp.translate(-left, -top);
                 record(host, sharp, inside, box);
             } finally {
-                recording = false;
+                copying = false;
                 glass.endRecording();
             }
             // Drawn FROST_SCALE times smaller and blurred there, then drawn back at full size.
@@ -1493,7 +1578,7 @@ public final class TranslucentBars {
 
         @Override
         public void draw(Canvas canvas) {
-            if (recording || !canvas.isHardwareAccelerated()) return;
+            if (copying || !canvas.isHardwareAccelerated()) return;
             // An overlay draws in its host's scrolled content (View translates by -scroll first), so
             // a scrolled host would put the frost off by its scroll. [node] sits where the host
             // shows, the way record() copies it.
@@ -1561,6 +1646,107 @@ public final class TranslucentBars {
         private GlassRefraction dome() {
             if (dome == null) dome = new GlassRefraction(false);
             return dome;
+        }
+
+        @Override
+        public void setAlpha(int alpha) {
+        }
+
+        @Override
+        public void setColorFilter(@Nullable ColorFilter filter) {
+        }
+
+        @Override
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
+        }
+    }
+
+    /**
+     * The frost of the strip Facebook paints behind the status bar (#507), in the strip's overlay.
+     * No part of the feed runs behind the strip to copy, so it takes the band of [host], the view
+     * under the top bar, just below the strip and as tall as it, blurred as a bar's frost is and
+     * drawn turned over: the band's top row lies along the strip's bottom edge, against the top
+     * bar's frost, which starts from that same row, so the two blurs meet without a seam. The
+     * strip's own colour goes over it as see-through as a frosted bar's fill, and Facebook's
+     * drawable is left as it is under both.
+     */
+    @RequiresApi(Build.VERSION_CODES.S)
+    static final class StripFrost extends Drawable {
+        final View strip;
+        final View host;
+        final RenderNode node = new RenderNode("Hushfacebook strip frost");
+        final RenderNode blur = new RenderNode("Hushfacebook strip frost blur");
+        /** The band copied, in [host]'s coordinates, and record's scratch box. */
+        final Rect band = new Rect();
+        private final Rect box = new Rect();
+        private final int[] stripOrigin = new int[2];
+        private final int[] hostOrigin = new int[2];
+        int frame;
+
+        StripFrost(View strip, View host, float radius) {
+            this.strip = strip;
+            this.host = host;
+            float small = radius / FROST_SCALE;
+            blur.setRenderEffect(RenderEffect.createBlurEffect(small, small, Shader.TileMode.CLAMP));
+            blur.setClipToBounds(true);
+            node.setClipToBounds(true);
+            setBounds(0, 0, strip.getWidth(), strip.getHeight());
+            strip.getOverlay().add(this);
+        }
+
+        /** Copies the band under the strip again and draws it turned over under [tint]. */
+        void update(int tint, int frame) {
+            this.frame = frame;
+            int width = strip.getWidth();
+            int height = strip.getHeight();
+            if (getBounds().width() != width || getBounds().height() != height) setBounds(0, 0, width, height);
+            strip.getLocationInWindow(stripOrigin);
+            host.getLocationInWindow(hostOrigin);
+            int left = stripOrigin[0] - hostOrigin[0];
+            int top = stripOrigin[1] + height - hostOrigin[1];
+            band.set(left, top, left + width, top + height);
+            node.setPosition(0, 0, width, height);
+            int smallWidth = Frost.small(width);
+            int smallHeight = Frost.small(height);
+            blur.setPosition(0, 0, smallWidth, smallHeight);
+            RecordingCanvas canvas = blur.beginRecording(smallWidth, smallHeight);
+            copying = true;
+            try {
+                canvas.scale(1f / FROST_SCALE, 1f / FROST_SCALE);
+                canvas.translate(-band.left, -band.top);
+                record(host, canvas, band, box);
+            } finally {
+                copying = false;
+                blur.endRecording();
+            }
+            turnOver(node.beginRecording(width, height), blur, height, tint);
+            node.endRecording();
+        }
+
+        /**
+         * Draws [blur], the band made {@link #FROST_SCALE} times smaller, back at full size upside
+         * down over [height] pixels, so its top row is at the bottom, then [tint] over it.
+         */
+        static void turnOver(Canvas canvas, RenderNode blur, int height, int tint) {
+            int saved = canvas.save();
+            canvas.translate(0, height);
+            canvas.scale(FROST_SCALE, -FROST_SCALE);
+            canvas.drawRenderNode(blur);
+            canvas.restoreToCount(saved);
+            canvas.drawColor(tint);
+        }
+
+        void remove() {
+            strip.getOverlay().remove(this);
+            node.discardDisplayList();
+            blur.discardDisplayList();
+        }
+
+        @Override
+        public void draw(Canvas canvas) {
+            if (copying || !canvas.isHardwareAccelerated()) return;
+            canvas.drawRenderNode(node);
         }
 
         @Override
