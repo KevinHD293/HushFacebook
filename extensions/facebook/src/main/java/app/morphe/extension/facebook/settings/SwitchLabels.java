@@ -255,6 +255,7 @@ final class SwitchLabels {
         if (setting == Settings.SAVED_VIDEOS_IN_PLAYER) return L10n.t("Open saved videos in the video player");
         if (setting == Settings.SAVED_VIDEOS_IN_ORDER) return L10n.t("Play saved videos in a row");
         if (setting == Settings.SAVED_VIDEOS_STAY_ON_END) return L10n.t("Stay on a saved video when it ends");
+        if (setting == Settings.SAVED_POSTS_IN_ROW) return L10n.t("Show saved posts in the row");
         if (setting == Settings.SKIP_STILL_WATCHING) return L10n.t("Skip \"Are you still watching?\"");
         if (setting == Settings.FILL_REELS) return L10n.t("Fill the screen with reels");
         if (setting == Settings.PLAY_FEED_REELS_WHOLE) return L10n.t("Play whole reels in the feed's Reels row");
@@ -340,6 +341,7 @@ final class SwitchLabels {
         if (setting == Settings.PICTURE_IN_PICTURE_FROM_MENU) return L10n.t("Only from a reel's More menu");
         if (setting == Settings.PICTURE_IN_PICTURE_BUTTON) return L10n.t("Picture-in-picture button");
         if (setting == Settings.KEEP_PLAYING_IN_BACKGROUND) return L10n.t("Keep playing in the background");
+        if (setting == Settings.NEXT_REEL_IN_BACKGROUND) return L10n.t("Next reel in the background");
         if (setting == Settings.BACKGROUND_PLAY_BUTTON) return L10n.t("Background play button in the window");
         if (setting == Settings.TURN_OFF_HDR_BRIGHTNESS) return L10n.t("Turn off HDR brightness");
         if (setting == Settings.PREFER_SDR_RENDITIONS) return L10n.t("Play SDR versions of HDR videos");

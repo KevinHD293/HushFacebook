@@ -7,7 +7,7 @@ package app.morphe.patches.facebook.feed.foldtext
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
-import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patches.facebook.ads.affiliate.FB_USER_SESSION
 import app.morphe.patches.facebook.feed.aidetected.EXTENSION_CLASSES
@@ -35,6 +35,7 @@ import app.morphe.util.ControlFlow
 import app.morphe.util.addInstructionsAtControlFlowLabel
 import app.morphe.util.classDefForEachReferencing
 import app.morphe.util.containsLiteralInstruction
+import app.morphe.util.executeBytecode
 import app.morphe.util.findMutableMethodOf
 import app.morphe.util.readsAfter
 import app.morphe.util.writersReaching
@@ -102,20 +103,20 @@ private val CAPTION_MEASURE = listOf("I", "I", "Z", "Z")
  * [CAPTION_TOGGLE] names, from the component's field or a server number, which both go through it.
  */
 @Suppress("unused")
-val foldLongTextPatch = bytecodePatch(
+val foldLongTextPatch = patch(
     // The README table check reads this literal; FOLD_PATCH carries the same text for the messages.
     name = "Fold long text",
     description = "Lets you pick how many lines a long post or comment shows before See more, from 1 to 20, " +
         "so you can fold sooner or read more before tapping. Starts at Facebook's choice. Pick the lines for " +
         "posts in Hushfacebook settings > News feed, and for comments under Comments and writing. " +
-        "A video's caption follows the count for posts. While Show full post text is on, posts still show whole.",
+        "Reel captions get a count of their own under Reels and Watch. While Show full post text is on, posts still show whole.",
 ) {
     // Feed already holds the most a group may, and the comment half lives under Comments and writing in settings.
     category("Comments")
     dependsOn(settingsPatch)
     compatibleWith(*AppCompatibilities.facebook())
 
-    execute {
+    executeBytecode {
         requireStatusMethod("foldLongText")
         // Every place is found before any is changed, so a build missing one keeps Facebook's as it is.
         val inserts = findPostFolds() + findHoistedPost() + findCommentFold() + findCaptionFolds()

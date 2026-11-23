@@ -311,6 +311,10 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.SAVED_VIDEOS_STAY_ON_END,
                     L10n.t("A saved video that ends stays on screen instead of opening the next one. Swipe up when "
                             + "you want the next.")));
+            // Asked as the row reaches each saved post (#404).
+            reels.addPreference(toggle(context, Settings.SAVED_POSTS_IN_ROW,
+                    L10n.t("A saved post in the row stays on screen instead of being skipped. Swipe up past its end "
+                            + "for the next saved video, or down past its top for the one before.")));
             // Asked before each next video, so a change shows from the next one (#427).
             reels.addPreference(toggle(context, Settings.SKIP_STILL_WATCHING,
                     L10n.t("Reels and videos keep going to the next one without pausing to ask if you're still "
@@ -331,6 +335,12 @@ final class VideoPages {
             reels.addPreference(toggle(context, Settings.SHOW_FULL_REEL_CAPTIONS,
                     L10n.t("Long captions on reels show all of their text right away. Tap the caption to fold it back. "
                             + "A change shows from the next reel.")));
+        }
+        // Fold long text's reel half, a list of its own since #506, read as each caption is measured.
+        if (build.contains(PatchFamily.FOLD_LONG_TEXT)) {
+            reels.addPreference(HushfacebookPreferenceFragment.foldReelCaptionsRow(context));
+        }
+        if (build.contains(PatchFamily.FULL_POST_TEXT)) {
             // Asked as each reel caption is built, so a change shows on the next caption (#419).
             if (captionBackdropInBuild()) {
                 reels.addPreference(toggle(context, Settings.DIM_OPEN_REEL_CAPTIONS,
@@ -676,6 +686,11 @@ final class VideoPages {
                         L10n.t("A video you started with a tap, or a reel you swiped to in Reels, keeps its sound "
                                 + "after you leave Facebook, and its notification can pause it. Swiping the "
                                 + "notification away or taking a call stops it.")));
+                // Asked as each background reel nears its end, so a change counts right away.
+                playback.addPreference(toggle(context, Settings.NEXT_REEL_IN_BACKGROUND,
+                        L10n.t("When a reel playing in the background ends, the next reel plays instead of the same one "
+                                + "again. It goes through the reels Reels had loaded when you left. Works with Keep "
+                                + "playing in the background on.")));
                 if (build.contains(PatchFamily.PICTURE_IN_PICTURE)) {
                     // Asked as each window's buttons are made, so a change shows from the next window.
                     playback.addPreference(toggle(context, Settings.BACKGROUND_PLAY_BUTTON,
