@@ -208,6 +208,7 @@ import app.morphe.extension.facebook.theme.AmoledTheme;
 import app.morphe.extension.facebook.theme.DarkMode;
 import app.morphe.extension.facebook.theme.FeedGapsForTests;
 import app.morphe.extension.facebook.theme.ForceDarkModeForTests;
+import app.morphe.extension.facebook.theme.MaterialYouForTests;
 import app.morphe.extension.facebook.updates.UpdatePrompts;
 import app.morphe.extension.shared.SettingsContextRule;
 import app.morphe.extension.shared.diagnostics.FeedFilterCounters;
@@ -558,6 +559,8 @@ public class PausedHooksTest {
                 // The reaction preview is left undrawn only while the patch runs.
                 PostPrompts::hideReactionPreview,
                 () -> PostPrompts.hideReactionPreview(true),
+                // So is the count beside a comment's faces (#483).
+                () -> PostPrompts.commentReactionCount(12, true) == 0,
                 // A Like button's icon is noted, and with a count it takes the post's faces (#541).
                 // Hide the reaction preview on posts overrules it, so it's off for this probe.
                 () -> {
@@ -599,7 +602,7 @@ public class PausedHooksTest {
                 () -> FullPostText.cut(new SpannableString("x"), "a story") == null,
                 () -> !FullPostText.allowTruncation(true),
                 () -> FullPostText.reelCaptionExpanded(false),
-                () -> app.morphe.extension.facebook.feed.CaptionBackdrop.forCaption(Integer.MAX_VALUE) != null));
+                () -> app.morphe.extension.facebook.feed.CaptionBackdrop.forCaption(Integer.MAX_VALUE, "Sunset at the lake") != null));
         probes.put(PatchFamily.TRANSLATE_POSTS, Collections.singletonList(() -> {
             PostTranslationForTests.noNetwork();
             Spannable post = new SpannableString("Una frase en otro idioma");
@@ -664,6 +667,8 @@ public class PausedHooksTest {
                 app.morphe.extension.facebook.stories.StoryViewerCleanup::hideFollow,
                 app.morphe.extension.facebook.stories.StoryViewerCleanup::hideReplyBar,
                 () -> !app.morphe.extension.facebook.stories.StoryViewerCleanup.showUpNext(true),
+                () -> !app.morphe.extension.facebook.stories.StoryViewerCleanup.hideTime(true),
+                () -> app.morphe.extension.facebook.stories.StoryViewerCleanup.showsTimeLine("10h"),
                 app.morphe.extension.facebook.stories.StoryViewerCleanupForTests::dropsACreateCard,
                 app.morphe.extension.facebook.stories.StoryProgressBarForTests::drawsABar,
                 app.morphe.extension.facebook.stories.StoryViewerCleanupForTests::flattensACubeTurn));
@@ -701,11 +706,12 @@ public class PausedHooksTest {
         // Your own profile's count line shows the number you typed.
         probes.put(PatchFamily.LOCAL_PROFILE_COUNTS,
                 Collections.singletonList(app.morphe.extension.facebook.profile.LocalProfileCountsForTests::swapsAFriendsCount));
-        // A post's row gets Save and loses Like, a video post's row gets Download, and the row goes
-        // without its own tap.
+        // A post's row loses Facebook's own Save and Like, a video post's row gets Download, and the
+        // row goes without its own tap. With every switch on, hiding Save wins over adding it (#541).
         probes.put(PatchFamily.POST_ACTION_BUTTONS, Arrays.asList(
-                PostActionButtonsForTests::addsSave,
+                PostActionButtonsForTests::hidesSave,
                 PostActionButtonsForTests::hidesLike,
+                PostActionButtonsForTests::hidesStars,
                 PostActionButtonsForTests::addsDownload,
                 PostActionButtonsForTests::leavesTheTapOff));
         // Marketplace's feed query asks to skip its ads, an ads-only query isn't sent, and a search
@@ -731,8 +737,16 @@ public class PausedHooksTest {
                 () -> ReelDeclutter.filterChips(Arrays.asList(new TypedFeedUnit("XFBFBShortsRemixAttribution"))) != null,
                 // The audio line goes under its own switch.
                 () -> ReelDeclutter.filterChips(Arrays.asList(new TypedFeedUnit("XFBFBShortsSoundtrackTitle"))) != null,
-                // So does the Reels tab's own audio line row.
-                ReelDeclutter::hideAudioLine,
+                // So does the Reels tab's own audio line row. With Show the post date on reels on as
+                // well the row stays to carry the date (#496), so it's off for this probe.
+                () -> {
+                    Settings.SHOW_REEL_POST_DATE.save(false);
+                    try {
+                        return ReelDeclutter.hideAudioLine();
+                    } finally {
+                        Settings.SHOW_REEL_POST_DATE.save(true);
+                    }
+                },
                 // And "Made with Edits" under the caption.
                 ReelDeclutter::hideEditsLabel,
                 // And the "Made with Edits" pill over a feed video (#314).
@@ -1065,6 +1079,8 @@ public class PausedHooksTest {
                     DarkMode.answer(true);
                     return FeedGapsForTests.drawsTheGap();
                 }));
+        // Material You: a server colour in dark mode takes the palette's (D#527).
+        probes.put(PatchFamily.MATERIAL_YOU_THEME, Collections.singletonList(MaterialYouForTests::recolours));
         // A request for a post's comments that names no order asks for the chosen one, and with
         // All comments chosen, the menu its answer draws is picked in.
         probes.put(PatchFamily.DEFAULT_COMMENT_ORDER, Arrays.asList(

@@ -585,6 +585,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_story_up_next", FALSE);
 
     /**
+     * A story that leaves out how long ago it was posted, like a Page's, shows it next to the name
+     * the way a friend's story does ({@link app.morphe.extension.facebook.stories.StoryViewerCleanup},
+     * #563). Starts off. Read as each story's header is built.
+     */
+    public static final BooleanSetting SHOW_STORY_TIME =
+            new BooleanSetting("hushfacebook_show_story_time", FALSE);
+
+    /**
      * The bar under someone else's story leaves: the repost button, the Send message box and the quick
      * reactions ({@link app.morphe.extension.facebook.stories.StoryViewerCleanup}, #542). Starts off.
      * Read as the bar draws.
@@ -692,8 +700,10 @@ public class Settings extends BaseSettings {
 
     /**
      * Each takes one button out of the row under a post (issue #265, {@link
-     * app.morphe.extension.facebook.feed.PostSaveButton}): Like, Comment, Repost (#450), Share or
-     * Send. Start off.
+     * app.morphe.extension.facebook.feed.PostSaveButton}): Like, Comment, Repost (#450), Share,
+     * Send, Stars (the button some creators' posts get for sending them Stars or gifts, #483), or
+     * Save, which Facebook now shows some accounts on its own (#541) and which this wins over
+     * POST_SAVE_BUTTON. Start off.
      */
     public static final BooleanSetting HIDE_POST_LIKE_BUTTON =
             new BooleanSetting("hushfacebook_hide_post_like_button", FALSE);
@@ -705,6 +715,10 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_post_share_button", FALSE);
     public static final BooleanSetting HIDE_POST_SEND_BUTTON =
             new BooleanSetting("hushfacebook_hide_post_send_button", FALSE);
+    public static final BooleanSetting HIDE_POST_STARS_BUTTON =
+            new BooleanSetting("hushfacebook_hide_post_stars_button", FALSE);
+    public static final BooleanSetting HIDE_POST_SAVE_BUTTON =
+            new BooleanSetting("hushfacebook_hide_post_save_button", FALSE);
 
     /**
      * A tap on the empty part of the row under a post, between its buttons and the reaction faces,
@@ -868,6 +882,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_reel_clean_button", FALSE);
 
     /**
+     * Faint Clean mode button (#519): Facebook's button out of Clean mode, over a clean reel's lower
+     * right, draws at {@link app.morphe.extension.facebook.reels.CleanExitSpot#FAINT} of its opacity,
+     * so the video's own text under it shows through. It still takes taps. Off by default, read each frame.
+     */
+    public static final BooleanSetting REEL_CLEAN_EXIT_FAINT =
+            new BooleanSetting("hushfacebook_reel_clean_exit_faint", FALSE);
+
+    /**
      * Back to Clean mode (#519): once the buttons are brought back over a reel with Always use
      * Clean mode or the Clean mode button on, the reel goes back into Clean mode on its own, when a
      * sheet opened over it closes or after a few seconds with no touch ({@link
@@ -956,6 +978,14 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_burn_in_stay_dim", FALSE);
 
     /**
+     * Tap the video to bring them back (#523): once Burn-in guard has dimmed the controls, a tap on the
+     * video brings them back and isn't handed to Facebook, so the video doesn't pause or play. A hold
+     * and a swipe stay Facebook's. {@link #BURN_IN_STAY_DIM} wins over it. Off by default, read on each tap.
+     */
+    public static final BooleanSetting BURN_IN_TAP_BACK =
+            new BooleanSetting("hushfacebook_burn_in_tap_back", FALSE, Setting.parentNot(BURN_IN_STAY_DIM));
+
+    /**
      * Dim to (#523): how much of the buttons, caption and bars still shows once Burn-in guard dims
      * them, a percent from 0 to 100, digits only, blank for 25, the level from before it could be
      * picked ({@link app.morphe.extension.facebook.reels.BurnInGuard#levelPercent}). Not a switch.
@@ -1041,6 +1071,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting SHOW_REEL_COMMENT_BUTTON =
             new BooleanSetting("hushfacebook_show_reel_comment_button", FALSE);
+
+    /**
+     * A long video in the Reels viewer gets Like, Comment, Share and Save down its right side, which
+     * Facebook leaves off it by presetting its side column to the three dots alone
+     * ({@link app.morphe.extension.facebook.reels.ReelDeclutter#presetButtons}, #525). Off by
+     * default. A change shows from the next video.
+     */
+    public static final BooleanSetting LONG_VIDEO_BUTTONS =
+            new BooleanSetting("hushfacebook_long_video_buttons", FALSE);
 
     /**
      * The date a reel or full-screen video was posted shows under its author, a line Facebook
@@ -2733,6 +2772,13 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_search_posts_tab", TRUE);
 
     /**
+     * A Videos chip goes in the row over search results, after Posts, labelled and opened through
+     * Facebook's own table of tab labels like the Posts chip (#483). Off by default.
+     */
+    public static final BooleanSetting SEARCH_VIDEOS_TAB =
+            new BooleanSetting("hushfacebook_search_videos_tab", FALSE);
+
+    /**
      * A Saved button at the end of the search bar opens Facebook's Saved screen
      * ({@link app.morphe.extension.facebook.search.SearchSavedButton}, #433). Off by default. The
      * button goes in as Facebook builds the bar, so turning it on takes a restart.
@@ -3423,6 +3469,16 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_amoled_flat_cards", FALSE, true);
 
     /**
+     * With the Material You theme in the build, whether it runs (D#527). Off, Facebook keeps the
+     * colours it has without the theme, AMOLED's with that one in the build, with no new patch
+     * ({@link app.morphe.extension.facebook.theme.MaterialYouSwitch}). Its resources go back as
+     * Facebook starts, so a change brings up the restart row. Starts on: picking the patch in
+     * Manager asked for the theme.
+     */
+    public static final BooleanSetting MATERIAL_YOU =
+            new BooleanSetting("hushfacebook_material_you", TRUE, true);
+
+    /**
      * With the AMOLED black theme, the gap Facebook leaves between a list's rows, posts in the feed
      * among them, shows as a thin gray line instead of the page's black
      * ({@link app.morphe.extension.facebook.theme.FeedGaps}, issue #206). Rows read it as they
@@ -3551,6 +3607,15 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_hide_comment_reaction_preview", FALSE);
 
     /**
+     * The number beside the reaction faces on a comment is left out, and the faces, their tap and
+     * what TalkBack reads stay ({@link app.morphe.extension.facebook.feed.PostPrompts#commentReactionCount},
+     * #483). Facebook's own setting for reaction counts misses comments. Off by default. A change
+     * shows on the comments drawn after it.
+     */
+    public static final BooleanSetting HIDE_COMMENT_REACTION_COUNTS =
+            new BooleanSetting("hushfacebook_hide_comment_reaction_counts", FALSE);
+
+    /**
      * A post's stacked reaction faces leave the end of its button row and sit on its Like button,
      * right before the count ({@link app.morphe.extension.facebook.feed.LikeButtonFaces}, #541). Off
      * by default, and {@link #HIDE_POST_REACTIONS} overrules it. A change shows on the posts drawn
@@ -3576,6 +3641,15 @@ public class Settings extends BaseSettings {
      */
     public static final BooleanSetting HIDE_REACTOR_NAMES =
             new BooleanSetting("hushfacebook_hide_reactor_names", FALSE);
+
+    /**
+     * A post whose author turned comments off or limited who can comment keeps its Comment button,
+     * so the comments already there can be read
+     * ({@link app.morphe.extension.facebook.feed.PostPrompts#showsCommentButton}, #299). Off by
+     * default. A change shows on the posts drawn after it.
+     */
+    public static final BooleanSetting SHOW_POST_COMMENT_BUTTON =
+            new BooleanSetting("hushfacebook_show_post_comment_button", FALSE);
 
     /**
      * The profile picture leaves the top of posts, and the name moves over into its space
@@ -3707,17 +3781,18 @@ public class Settings extends BaseSettings {
             new BooleanSetting("hushfacebook_dim_folded_reel_captions", FALSE);
 
     /**
-     * The name at the bottom of a reel sits on the caption's dark box (#490,
-     * {@link app.morphe.extension.facebook.feed.CaptionBackdrop#forReelName}). Feed posts' names keep
+     * The name at the bottom of a reel, with the date line under it, sits on the caption's dark box (#490,
+     * {@link app.morphe.extension.facebook.feed.CaptionBackdrop#forReelName} and
+     * {@link app.morphe.extension.facebook.feed.CaptionBackdrop#forNameBlock}). Feed posts' names keep
      * Facebook's look. A change shows from the next reel.
      */
     public static final BooleanSetting DIM_REEL_NAMES =
             new BooleanSetting("hushfacebook_dim_reel_names", FALSE);
 
     /**
-     * A name Facebook draws over a feed video, rather than above it, sits on the same dark box (#533,
-     * {@link app.morphe.extension.facebook.feed.CaptionBackdrop#forReelName}). A change shows on the
-     * headers drawn after it.
+     * A name Facebook draws over a feed video, rather than above it, sits on the same dark box with the
+     * date under it (#533, #490, {@link app.morphe.extension.facebook.feed.CaptionBackdrop#forReelName}).
+     * A change shows on the headers drawn after it.
      */
     public static final BooleanSetting DIM_FEED_VIDEO_NAMES =
             new BooleanSetting("hushfacebook_dim_feed_video_names", FALSE);

@@ -95,6 +95,7 @@ public class ReelDeclutterTest {
         Settings.HIDE_SHARED_REEL_FRIEND_SHEET.resetToDefault();
         Settings.SHARED_REELS_ALONE.resetToDefault();
         Settings.PLAY_FEED_REELS_WHOLE.resetToDefault();
+        Settings.LONG_VIDEO_BUTTONS.resetToDefault();
         BaseSettings.DEBUG.resetToDefault();
         FeedFilterCounters.clear();
         HookStatus.clear();
@@ -558,6 +559,42 @@ public class ReelDeclutterTest {
         assertTrue(ReelDeclutter.showsCommentButton(true));
     }
 
+    /** Button kinds as Facebook's side column names them. */
+    enum ButtonKind { DOTS_3_HORIZONTAL, LIKE, COMMENT, SHARE, BOOKMARK }
+
+    /**
+     * Facebook presets a long video's side column (#525) to the three dots alone. With the switch on,
+     * a preset without Like, Comment, Share or Save is set aside (null) so the builder makes its
+     * usual list. A preset holding any of them, no preset, and the switch off or paused keep it.
+     */
+    @Test
+    public void aLongVideosThreeDotsPresetIsSetAsideOnlyWithTheSwitchOn() {
+        assertFalse(Settings.LONG_VIDEO_BUTTONS.defaultValue);
+        assertFalse("asked as each side column is built, so no restart", Settings.LONG_VIDEO_BUTTONS.rebootApp);
+        java.util.List<ButtonKind> dots = java.util.Collections.singletonList(ButtonKind.DOTS_3_HORIZONTAL);
+        assertSame("off, the preset was set aside", dots, ReelDeclutter.presetButtons(dots));
+
+        Settings.LONG_VIDEO_BUTTONS.save(true);
+        assertNull(ReelDeclutter.presetButtons(dots));
+        assertTrue(HookStatus.report().toString(),
+                HookStatus.report().toString().contains(ReelDeclutter.PRESET_SET_ASIDE + " 1"));
+        for (ButtonKind kept : new ButtonKind[] {ButtonKind.LIKE, ButtonKind.COMMENT, ButtonKind.SHARE, ButtonKind.BOOKMARK}) {
+            java.util.List<ButtonKind> preset = java.util.Arrays.asList(ButtonKind.DOTS_3_HORIZONTAL, kept);
+            assertSame("a preset with " + kept + " was set aside", preset, ReelDeclutter.presetButtons(preset));
+        }
+        assertNull(ReelDeclutter.presetButtons(null));
+        Object notAList = new Object();
+        assertSame(notAList, ReelDeclutter.presetButtons(notAList));
+
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertSame("paused, the preset was set aside", dots, ReelDeclutter.presetButtons(dots));
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> assertSame("the preset was set aside before the settings were ready",
+                dots, ReelDeclutter.presetButtons(dots)));
+        Settings.LONG_VIDEO_BUTTONS.save(false);
+        assertSame(dots, ReelDeclutter.presetButtons(dots));
+    }
+
     /**
      * A reel's post date (#296) keeps the server's no until the switch is on, then shows, and the no
      * comes back paused, before the settings are ready, once the switch is off again and when it
@@ -809,6 +846,51 @@ public class ReelDeclutterTest {
         PauseForTests.resume();
         SettingsContextRule.withoutContext(() ->
                 assertSame("dated before the settings were ready", song, ReelDeclutter.audioLineText(song, story)));
+    }
+
+    /**
+     * The Reels tab's audio line is where the post date goes (#357), so hiding the line took the date
+     * with it: a reel with "Original audio" showed its name and caption and no date (#496, S22 588,
+     * 2026-11-24). While the date's switch is on the line stays with the date alone on it, the song
+     * still left off. Date off, paused or unready settings: the line goes or stays the way it did.
+     */
+    @Test
+    public void aHiddenAudioLineKeepsThePostDateAlone() {
+        String song = "JulesScenery" + ReelDeclutter.DOT + "Original audio";
+        long threeWeeks = NOW / 1000 - 21L * 24 * 60 * 60;
+        assertEquals("3 weeks ago", ReelDeclutter.dateAlone(threeWeeks, NOW, ReelDateStyle.AGO, Locale.US, UTC));
+        assertEquals("Oct 12", ReelDeclutter.dateAlone(1791817200L, NOW, ReelDateStyle.DATE, Locale.US, UTC));
+        for (ReelDateStyle style : ReelDateStyle.values()) {
+            assertEquals("no time, no song either", "", ReelDeclutter.dateAlone(0, NOW, style, Locale.US, UTC));
+            assertEquals("a time to come", "", ReelDeclutter.dateAlone(NOW / 1000 + 3600, NOW, style, Locale.US, UTC));
+        }
+
+        long posted = System.currentTimeMillis() / 1000 - 21L * 24 * 60 * 60;
+        TreeJNI story = new TreeJNI().with("creation_time", posted);
+        Settings.HIDE_REEL_AUDIO_LINE.save(true);
+        assertTrue("the date off, the line goes as before", ReelDeclutter.hideAudioLine());
+        assertSame(song, ReelDeclutter.audioLineText(song, story));
+
+        Settings.SHOW_REEL_POST_DATE.save(true);
+        assertFalse("the line went and took the date with it", ReelDeclutter.hideAudioLine());
+        assertEquals("the song stayed on the line", "3 weeks ago", ReelDeclutter.audioLineText(song, story));
+        assertEquals("a story with no time showed the song", "", ReelDeclutter.audioLineText(song, new TreeJNI()));
+        assertTrue(line(ReelDeclutter.AUDIO_ROUTE),
+                line(ReelDeclutter.AUDIO_ROUTE).contains(ReelDeclutter.AUDIO_LINE_DATE_ONLY + " 2"));
+
+        Settings.HIDE_REEL_AUDIO_LINE.save(false);
+        assertEquals("the line shown, the date goes in front of the song", "3 weeks ago" + ReelDeclutter.DOT + song,
+                ReelDeclutter.audioLineText(song, story));
+        Settings.HIDE_REEL_AUDIO_LINE.save(true);
+
+        PauseForTests.pause(HushfacebookPause.Reason.SWITCH);
+        assertFalse("the line went while paused", ReelDeclutter.hideAudioLine());
+        assertSame("the song left off while paused", song, ReelDeclutter.audioLineText(song, story));
+        PauseForTests.resume();
+        SettingsContextRule.withoutContext(() -> {
+            assertFalse("the line went before the settings were ready", ReelDeclutter.hideAudioLine());
+            assertSame("the song left off before the settings were ready", song, ReelDeclutter.audioLineText(song, story));
+        });
     }
 
     /**

@@ -71,7 +71,7 @@ Export settings	Экспортировать настройки
 Facebook crashed or froze within a minute of starting three times in a row, so Hushfacebook paused itself.	Facebook три раза подряд аварийно завершил работу или завис в течение минуты после запуска, поэтому Hushfacebook автоматически приостановил свою работу.
 Facebook no longer downloads ads, or the data it uses to pick them, in the background.	Facebook больше не загружает в фоновом режиме рекламу и данные, используемые для ее подбора.
 Facebook doesn't show its ads inside other apps on this phone.	Facebook не показывает свою рекламу в других приложениях на этом телефоне.
-Dark mode and this screen use colors from your wallpaper (blue on Android 11). Turn on dark mode in Facebook to see it.	Темный режим и этот экран используют цвета обоев (на Android 11 синий цвет). Чтобы увидеть изменения, включите темный режим в Facebook.
+Dark mode and this screen use colors from your wallpaper (blue on Android 11). Turn it off to go back to the old colors without patching again. Restart Facebook to see the change.	Темный режим и этот экран используют цвета обоев (на Android 11 синий цвет). Выключите, чтобы вернуть прежние цвета без повторного патчинга. Перезапустите Facebook, чтобы увидеть изменения.
 Hide Stories between posts	Скрывать Истории между публикациями
 Joining the picture and sound	Объединение изображения и звука
 # context: summary of the Pause Hushfacebook switch; Debug logging and Lock Facebook are the two switches a pause leaves working
@@ -316,7 +316,7 @@ The Follow button next to the reel's author. You can still follow them from thei
 Hide comment and reaction previews	Скрывать предварительный просмотр комментариев и реакций
 The comment Facebook previews under a reel and the bubbles of friends who reacted. Open the comments to see them all.	Скрывает комментарий, который Facebook показывает под Reels, и аватары друзей, поставивших реакцию. Откройте комментарии, чтобы увидеть их все.
 Hide Threads cards between reels	Скрывать карточки Threads между Reels
-Hides the "Threads you might like" card between reels. Off by default, since it hasn't been tried on a real account yet.	Скрывает карточку «Возможно, вам понравится в Threads» между Reels. По умолчанию выключено, поскольку функция еще не проверялась на реальном аккаунте.
+Hides the "Threads you might like" card and other Meta promotions between reels. Off by default, since it hasn't been tried on a real account yet.	Скрывает карточку «Возможно, вам понравится в Threads» и другие промоакции Meta между Reels. По умолчанию выключено, поскольку функция еще не проверялась на реальном аккаунте.
 Hide post cards between reels	Скрывать карточки публикаций между Reels
 Hides the carousels of posts Facebook puts between reels, like "Catch up on conversations" from your groups. Off by default.	Скрывает карусели публикаций, которые Facebook вставляет между Reels, например «Будьте в курсе обсуждений» из ваших групп. По умолчанию выключено.
 Only reels from accounts I follow	Только Reels от аккаунтов, на которые я подписан
@@ -596,6 +596,8 @@ Hide Repost under posts	Скрывать кнопку «Репост» под п
 Hide Share under posts	Скрывать кнопку «Поделиться» под публикациями
 # context: switch title under News feed; Send is Facebook's own button under a post that sends it in a chat
 Hide Send under posts	Скрывать кнопку «Отправить» под публикациями
+Hide Stars and gifts under posts	Скрывать «Звёзды» и подарки под публикациями
+Hide Save under posts	Скрывать кнопку «Сохранить» под публикациями
 # context: summary shared by those five switches
 Takes this button out of the row under posts in the feed. The other buttons stay, and a post with all of its buttons hidden shows no row.	Удаляет эту кнопку из строки под публикациями в Ленте. Остальные кнопки остаются. Если скрыты все кнопки публикации, строка не отображается.
 # context: switch title under News feed; the buttons are Like, Comment, Share and the others in the row under a post
@@ -1025,6 +1027,7 @@ Hide the Create tab	Скрывать вкладку «Создать»
 Hide the Explore tab	Скрывать вкладку «Интересное»
 Hide the Jobs tab	Скрывать вкладку «Вакансии»
 Removes this tab from the tab bar. Its page is still in the Menu. Restart Facebook to see the change.	Удаляет эту вкладку с панели вкладок. Ее страница по-прежнему доступна в меню. Перезапустите Facebook, чтобы увидеть изменения.
+Removes this tab from the tab bar. Its page is still in the Menu, unless you pick it in Menu tiles to hide. Restart Facebook to see the change.	Удаляет эту вкладку с панели вкладок. Ее страница по-прежнему доступна в меню, если не выбрать ее в разделе «Плитки меню для скрытия». Перезапустите Facebook, чтобы увидеть изменения.
 Facebook opens on Home while %1$s is on, since %2$s is off the tab bar. Your choice stays saved.	Пока включена настройка «%1$s», Facebook открывается на вкладке «Главная», поскольку «%2$s» удалена с панели вкладок. Ваш выбор сохраняется.
 # context: summary of that switch; Video is Facebook's name for the tab on some accounts
 No dot or new count on the Reels tab, called Video on some accounts. Other tabs keep theirs.	На вкладке Reels (в некоторых аккаунтах она называется «Видео») не будет точки или счетчика новых элементов. На остальных вкладках счетчики сохраняются.
@@ -1128,7 +1131,7 @@ A folded reel caption, the short one with more at the end, sits on the same dark
 # context: switch title under Reels and Watch, below the caption boxes; the name of who posted a reel, at its bottom, gets the same dark see-through box
 Dark box behind reel names	Темная подложка под именами в Reels
 # context: summary of that switch
-The name at the bottom of a reel sits on the same dark box, so it's easy to read over a bright video. A change shows from the next reel.	Имя внизу Reels лежит на той же темной подложке, поэтому его легко читать поверх яркого видео. Изменение применяется со следующего Reels.
+The name at the bottom of a reel, with the date and details under it, sits on the same dark box, so it's easy to read over a bright video. A change shows from the next reel.	Имя внизу Reels вместе с датой и подробностями под ним лежит на той же темной подложке, поэтому его легко читать поверх яркого видео. Изменение применяется со следующего Reels.
 # context: row title under Reels and Watch and its dialog title; how dark every box behind captions and names is, as a percent of black
 Box darkness	Темнота подложек
 # context: the message in that row's dialog; %1$s and %2$s are the lowest and highest percent, %3$s the percent a blank row gives
@@ -1491,7 +1494,7 @@ Adds an eye button to the top of each story while you view anonymously. Tap it t
 # context: what TalkBack reads for the eye button over a story while that story is still hidden from its viewer list
 Mark as seen	Отметить как просмотренное
 # context: what TalkBack reads for the eye button once the story is marked and waiting to be sent; a second tap takes the mark back
-Marked as seen. Tap again to undo.	Отмечено как просмотренное. Нажмите еще раз, чтобы отменить.
+Marked as seen	Отмечено как просмотренное
 # context: what TalkBack reads for the eye button once the marked story was sent as seen
 Marked as seen and sent	Отмечено как просмотренное и отправлено
 # context: the word lists' dialogs, after their first paragraph: a line between slashes is a regular expression; %1$d is how many a list holds, %2$d the most characters each
@@ -1907,7 +1910,7 @@ Shows a small button at the left edge of a reel or video that has the window rea
 # context: switch title under Playback; on, a video you started keeps its sound after you leave Facebook; also the label of a headphones button in the picture-in-picture window
 Keep playing in the background	Продолжать воспроизведение в фоне
 Next reel in the background	Следующий ролик Reels в фоне
-When a reel playing in the background ends, the next reel plays instead of the same one again. It goes through the reels Reels had loaded when you left. Works with Keep playing in the background on.	Когда ролик Reels, играющий в фоне, заканчивается, вместо повтора включается следующий. Воспроизводятся ролики, которые Reels успел загрузить, когда вы вышли. Работает при включенной функции «Продолжать воспроизведение в фоне».
+When a reel playing in the background ends, the next reel plays instead of the same one again, and Reels keeps loading more as it goes. Works with Keep playing in the background on.	Когда ролик Reels, играющий в фоне, заканчивается, вместо повтора включается следующий, а Reels по ходу подгружает новые. Работает при включенной функции «Продолжать воспроизведение в фоне».
 # context: summary of that switch; the notification is the one Facebook shows with the video's play and pause buttons
 A video you started with a tap, or a reel you swiped to in Reels, keeps its sound after you leave Facebook, and its notification can pause it. Swiping the notification away or taking a call stops it.	Видео, которое вы запустили нажатием, или ролик, к которому вы перешли свайпом в Reels, продолжает звучать после выхода из Facebook, а его уведомление позволяет поставить его на паузу. Если смахнуть уведомление или ответить на звонок, воспроизведение остановится.
 # context: title of that notification when the video has none of its own
@@ -2027,8 +2030,10 @@ Show reactions on the Like button	Показывать реакции на кн�
 Moves a post's reaction faces from the end of its button row onto the Like button, right before the count. The Like button likes and reacts as before. A video showing its views there gets one Like face, or your own reaction once you react. Hide the reaction preview on posts overrules it. A change shows on the posts drawn after it.	Переносит значки реакций публикации с конца ряда кнопок на кнопку «Нравится», прямо перед числом. Кнопка «Нравится» ставит отметку «Нравится» и реакции, как раньше. Видео, у которого там показаны просмотры, получает один значок «Нравится» или вашу реакцию, когда вы отреагируете. Настройка «Скрывать предварительный просмотр реакций под публикациями» имеет приоритет. Изменение видно на публикациях, показанных после него.
 # context: switch title under Comments; the reaction preview is the stack of reaction icons in the corner of a comment
 Hide the reaction preview on comments	Скрывать предварительный просмотр реакций в комментариях
+Hide reaction counts on comments	Скрывать число реакций в комментариях
 # context: summary of that switch; "reactions" are Facebook's Like, Love, Haha and other reactions
 Hides the stacked reaction icons in the corner of a comment. The space stays, so a tap where they were still opens the list of reactions.	Скрывает значки реакций в углу комментария. Пустое место остается, поэтому нажатие на него по-прежнему открывает список реакций.
+Hides the number next to the reaction icons on a comment. The icons stay, and a tap on them still opens the list of reactions.	Скрывает число рядом со значками реакций у комментария. Значки остаются, и нажатие на них по-прежнему открывает список реакций.
 # context: switch title under Downloads; "Download" is the post menu row "Download to phone" and "post menus" are the three-dot menus under posts
 Download first in post menus	Перемещать скачивание в начало меню публикаций
 # context: summary of that switch; "Download to phone" and "Save photo" are the menu rows, translate them as elsewhere; "More options" is the title of Facebook's own page, use Facebook's wording
@@ -2473,6 +2478,10 @@ Show Comment when comments are off	Показывать кнопку «Комм�
 Show the post date on reels	Показывать дату публикации в Reels
 Shows when a reel or a video you open full screen was posted, under the name of who posted it. A change shows from the next reel.	Показывает дату публикации Reels или видео, открытого в полноэкранном режиме, под именем автора. Изменение применяется начиная со следующего Reels.
 Keeps the Comment button on reels whose comments are turned off, so you can still read the ones already there. A change shows from the next reel.	Оставляет кнопку «Комментировать» в Reels, где комментарии отключены, чтобы вы могли читать уже существующие комментарии. Изменение применяется начиная со следующего Reels.
+# context: switch title under Reels; on, a long video in the Reels viewer (a film or a live replay) gets Facebook's Like, Comment, Share and Save buttons down its right side, which Facebook leaves off
+Side buttons on long videos	Боковые кнопки на длинных видео
+# context: summary of that switch; Like, Comment, Share and Save are Facebook's own button names
+Brings back Like, Comment, Share and Save down the side of a long video in the Reels viewer, where Facebook leaves them off. A change shows from the next video.	Возвращает кнопки «Нравится», «Комментировать», «Поделиться» и «Сохранить» сбоку длинного видео в просмотре Reels, где Facebook их не показывает. Изменение применяется начиная со следующего видео.
 Select part of a post's text	Выбирать часть текста публикации
 Holding a post's text opens it in a box where you can select just the part you want and copy that, or copy all of it. The hold itself copies nothing.	Удержание текста публикации открывает его в окне, где можно выделить только нужную часть и скопировать её или скопировать всё. Само удержание ничего не копирует.
 Hold a feed photo to react	Удержание фото в Ленте для реакции
@@ -2705,6 +2714,8 @@ After %1$d seconds	Через %1$d секунд
 # context: Reels: Burn-in guard's switch that keeps the faded buttons faded while you tap
 Stay dim when I tap	Не осветлять при касании
 Once Burn-in guard fades the buttons, they stay faded on Reels whatever you tap or swipe, the next reel too. They still work. Leaving Reels brings them back.	После затемнения кнопок защитой от выгорания они остаются затемненными в Reels при любых нажатиях и свайпах, в том числе при переходе к следующему Reels. Кнопки продолжают работать. При выходе из Reels они снова отображаются.
+Tap the video to bring them back	Касание видео возвращает их
+Once Burn-in guard fades the buttons, a tap on the video brings them back without pausing it. The next tap pauses as usual.	После затемнения кнопок защитой от выгорания касание видео снова показывает их, не ставя видео на паузу. Следующее касание ставит на паузу как обычно.
 # context: Reels: Burn-in guard's row for how much of the dimmed buttons, caption and bars still shows, a percent typed in
 Dim to	Затемнять до
 How much of the buttons, caption and bars still shows once they dim, in percent, from %1$s to %2$s. Leave it blank for %3$s.	Насколько видны кнопки, подпись и панели после затемнения, в процентах, от %1$s до %2$s. Оставьте поле пустым для значения %3$s.
@@ -2777,7 +2788,9 @@ Your tab bar will go in this order: %1$s.	Вкладки на панели по�
 Show only watched stories	Показывать только просмотренные Истории
 The Stories tray keeps only the stories you've already watched, so you can find one again. Turn it off to see the new ones. Hide seen stories waits while this is on. Applies when Facebook next loads the tray.	В ленте Историй остаются только те, что вы уже посмотрели, чтобы можно было найти нужную. Выключите, чтобы видеть новые. Пока это включено, «Скрывать просмотренные Истории» не действует. Сработает, когда Facebook снова загрузит ленту.
 Show Posts in search	Показывать «Публикации» в поиске
+Show Videos in search	Показывать «Видео» в поиске
 Puts Posts back in the row over search results, after Reels, so you can see only posts for what you searched.	Возвращает «Публикации» в ряд над результатами поиска, после Reels, чтобы видеть только публикации по вашему запросу.
+Puts Videos in the row over search results, next to Posts, so you can see only videos for what you searched.	Добавляет «Видео» в строку над результатами поиска, рядом с «Публикациями», чтобы видеть только видео по запросу.
 Saved button in search	Кнопка «Сохраненное» в поиске
 Puts a Saved button at the end of the search bar, so your saved posts and videos are one tap away. Restart Facebook to see the change.	Добавляет кнопку «Сохраненное» в конец строки поиска, чтобы сохраненные публикации и видео были в одном касании. Перезапустите Facebook, чтобы увидеть изменения.
 Restore feed sound after opened videos	Возвращать звук Ленты после открытых видео
@@ -2790,6 +2803,10 @@ Hide friends' reactions on photos and videos	Скрывать реакции д�
 Takes away the friend's picture with a reaction on it that Facebook puts on a photo or video when a friend reacted. A change shows on the posts drawn after it.	Убирает фото друга с его реакцией, которое Facebook показывает поверх фото или видео, когда друг отреагировал. Изменение видно в публикациях, загруженных после него.
 Hide who reacted under posts	Скрывать, кто отреагировал на публикации
 Takes away the line under a post that names who reacted, like "Name and others reacted". A change shows on the posts drawn after it.	Убирает строку под публикацией с именами тех, кто отреагировал, например «Имя и другие отреагировали». Изменение видно в публикациях, загруженных после него.
+# context: switch title under News feed; on, a post whose author turned comments off or limited who can comment keeps Facebook's Comment button, so its comments can still be read
+Show Comment on posts with comments off	Показывать «Комментировать» в публикациях с отключёнными комментариями
+# context: summary of that switch; Comment is Facebook's own button name
+Keeps the Comment button on posts whose author turned comments off or limited who can comment, so you can still read the ones already there. A change shows on the posts drawn after it.	Оставляет кнопку «Комментировать» в публикациях, автор которых отключил комментарии или ограничил, кто может комментировать, чтобы вы могли читать уже существующие комментарии. Изменение видно в публикациях, загруженных после него.
 Hide the Reels title	Скрывать заголовок Reels
 Takes the word Reels off the top of the Reels tab. The buttons beside it stay.	Убирает слово Reels в верхней части вкладки Reels. Кнопки рядом остаются.
 Hide Back on opened videos	Скрывать «Назад» у открытых видео
@@ -2867,12 +2884,16 @@ Shows a thin bar along the bottom of a story that fills as it plays, like the on
 Seek bar on stories	Полоса перемотки в Историях
 Plain slide between people	Простое перелистывание между людьми
 Swiping to the next or previous person's stories slides them across instead of turning them like a cube. Applies from your next swipe.	При перелистывании к Историям следующего или предыдущего человека они сдвигаются в сторону, а не поворачиваются, как куб. Применяется со следующего перелистывания.
+Show the time on every story	Показывать время на каждой истории
+Stories that leave out how long ago they were posted, like a Page's, show it next to the name the way a friend's story does. Applies from the next story you open.	Истории, где не указано, как давно они опубликованы, например истории Страниц, показывают это рядом с именем, как история друга. Действует со следующей открытой истории.
 Fade the story seek bar	Приглушать полосу перемотки Историй
 Story position	Позиция в Истории
 Shows a bar along the bottom of a video story that you drag to move through it. The story waits while you drag. Progress bar at the bottom makes way for it on video stories.	Показывает внизу видеоистории полосу, которую можно тянуть, чтобы перемещаться по ней. Пока вы тянете, История ждёт. «Полоса прогресса внизу» уступает ей место в видеоисториях.
 With Seek bar on stories on, the bar fades a few seconds after the story starts or you last touched it. A touch or a pause brings it back.	Когда включена «Полоса перемотки в Историях», полоса становится бледнее через несколько секунд после начала Истории или после последнего касания. Касание или пауза возвращают её.
 Clean mode	Чистый режим
 Clean mode button on reels	Кнопка чистого режима в Reels
+Faint Clean mode button	Бледная кнопка чистого режима
+Facebook's button for leaving Clean mode shows faint, so the text in the video under it stays readable. It still works when you tap it.	Кнопка Facebook для выхода из чистого режима становится бледной, и текст в видео под ней остается читаемым. Нажатие на нее по-прежнему работает.
 Adds a Clean mode button to the buttons down the side of a reel. Tap it to hide them, and Clean mode stays on as you swipe. Facebook's own Clean mode button brings them back.	Добавляет кнопку чистого режима к кнопкам сбоку от Reels. Нажмите ее, чтобы скрыть их, и чистый режим останется включенным при пролистывании. Собственная кнопка чистого режима Facebook возвращает их.
 Open chats in Messenger	Открывать чаты в Messenger
 Opens chats in the Messenger app instead of inside Facebook, the Message button on a profile included, while Messenger is installed and enabled. Without Messenger, chats stay in Facebook. Restart Facebook after changing it.	Чаты открываются в приложении Messenger, а не внутри Facebook, в том числе по кнопке «Отправить сообщение» в профиле, пока Messenger установлен и включён. Без Messenger чаты остаются в Facebook. Перезапустите Facebook после изменения.
@@ -3196,7 +3217,7 @@ The time or date under the poster's name is bold, like the name.	Время ил
 Show full names	Показывать имена полностью
 A long name at the top of a post wraps onto the next line instead of ending in "...". A name that fits still takes one line.	Длинное имя вверху публикации переносится на следующую строку, а не обрывается на «...». Имя, которое помещается, по-прежнему занимает одну строку.
 Dark box behind feed video names	Темная подложка под именами на видео в ленте
-When a video in your feed has the poster's name on top of the video, that name sits on the same dark box. A change shows on the posts drawn after it.	Когда видео в ленте показывает имя автора поверх видео, это имя лежит на той же темной подложке. Изменение видно на публикациях, загруженных после него.
+When a video in your feed has the poster's name on top of the video, that name and the date under it sit on the same dark box. A change shows on the posts drawn after it.	Когда видео в ленте показывает имя автора поверх видео, это имя и дата под ним лежат на той же темной подложке. Изменение видно на публикациях, загруженных после него.
 Quality settings	Настройки качества
 Request community note	Запросить заметку сообщества
 Something went wrong	Что-то пошло не так
