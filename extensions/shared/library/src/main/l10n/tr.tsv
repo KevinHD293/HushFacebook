@@ -1246,15 +1246,6 @@ Turn off haptics	Dokunsal titreşimi kapat
 Stops the small vibrations Facebook makes when you tap or swipe. Your keyboard and phone vibrations aren't affected.	Facebook'un dokunma veya kaydırma sırasında yaptığı küçük titreşimleri durdurur. Klavyenizin ve telefonunuzun titreşimleri etkilenmez.
 Turn off screen transitions	Ekran geçişlerini kapat
 Tabs, the Menu, photos and screens that open over Facebook appear at once instead of sliding or zooming in. Swiping between tabs still works.	Sekmeler, Menü, fotoğraflar ve Facebook'un üzerinde açılan ekranlar kayarak ya da yakınlaşarak gelmek yerine hemen görünür. Sekmeler arasında kaydırma yine çalışır.
-Unlock app icons	Uygulama simgelerinin kilidini aç
-Lets you pick the app icons Facebook keeps for Facebook Plus, on Facebook's App icon page. The Pick an app icon row opens that page. Your pick stays if you turn this off, so pick the blue one first to go back.	Facebook'un Facebook Plus'a ayırdığı uygulama simgelerini, Facebook'un Uygulama simgesi sayfasında seçmenizi sağlar. Uygulama simgesi seç satırı bu sayfayı açar. Bunu kapatsanız da seçiminiz kalır, geri dönmek için önce mavi olanı seçin.
-# context: settings row under Appearance, right below the Unlock app icons switch; opens Facebook's own App icon page, so use Facebook's name for that page in this language
-Pick an app icon	Uygulama simgesi seç
-Opens Facebook's App icon page, even on accounts where Facebook doesn't list it in Settings and privacy.	Facebook'un Uygulama simgesi sayfasını, Facebook'un Ayarlar ve gizlilik'te göstermediği hesaplarda da açar.
-Use the icon at the top of Home	Ana sayfanın üstünde simgeyi kullan
-Shows the app icon you picked at the top of Home instead of the Facebook wordmark. Needs Unlock app icons and a pick other than the blue one. Restart Facebook to see the change.	Seçtiğin uygulama simgesini Facebook yazısı yerine ana sayfanın üstünde gösterir. Uygulama simgelerinin kilidini aç ayarı ve maviden farklı bir seçim gerekir. Değişikliği görmek için Facebook'u yeniden başlat.
-# context: toast when the row above finds no App icon page in this Facebook build
-This Facebook build has no App icon page.	Bu Facebook sürümünde Uygulama simgesi sayfası yok.
 # context: switch title under Playback; Android's own name for the floating video window
 Picture-in-picture	Pencere içinde pencere
 # context: summary of that switch
@@ -3170,3 +3161,27 @@ All your notifications are marked as read.	Tüm bildirimlerin okundu olarak işa
 Nothing was marked, since Facebook didn't say who's signed in. Open the Notifications tab once, then try again.	Hiçbir şey işaretlenmedi, çünkü Facebook kimin oturum açtığını bildirmedi. Bildirimler sekmesini bir kez açıp yeniden dene.
 This build can't mark notifications as read.	Bu derleme bildirimleri okundu olarak işaretleyemez.
 Facebook couldn't mark your notifications as read. Try again in a moment.	Facebook bildirimlerini okundu olarak işaretleyemedi. Birazdan yeniden dene.
+# context: Share to Facebook chats, a switch on the Chats page and the share target it adds; the notes are short toasts
+Share to Facebook chats	Facebook sohbetlerinde paylaş
+Adds Facebook chats to Android's share menu. A photo or video you share there is saved to your gallery and text is copied, then your chats open so you can pick one and send it.	Android'in paylaşım menüsüne Facebook sohbetlerini ekler. Oraya paylaştığın fotoğraf veya video galerine kaydedilir ve metin kopyalanır, ardından sohbetlerin açılır, böylece birini seçip gönderebilirsin.
+Share to Facebook chats is off.	Facebook sohbetlerinde paylaş kapalı.
+Nothing in it to send.	Gönderilecek bir şey yok.
+Couldn't save it to your gallery.	Galeriye kaydedilemedi.
+Copied and saved. Pick a chat.	Kopyalandı ve kaydedildi. Bir sohbet seç.
+In your gallery now. Pick a chat.	Artık galerinde. Bir sohbet seç.
+Copied. Pick a chat and paste it.	Kopyalandı. Bir sohbet seçip yapıştır.
+Open your chats to pick one.	Birini seçmek için sohbetlerini aç.
+Post date after the caption	Paylaşım tarihi açıklamadan sonra
+With Show the post date on reels on, puts the date at the end of the caption instead of under the name, where the song and other labels crowd it. A change shows from the next reel.	"Reels'te paylaşım tarihini göster" açıkken tarihi, şarkının ve diğer etiketlerin sıkıştırdığı adın altı yerine açıklamanın sonuna koyar. Değişiklik bir sonraki reel'den itibaren görünür.
+Fill every reel	Tüm Reels ekranı doldursun
+With Fill the screen with reels on, every reel fills the screen, even when that cuts a lot off the edges. Made for foldables and tablets, where most reels would keep their bars.	"Reels ekranı doldursun" açıkken her Reels videosu, kenarlarından çok şey kırpılsa bile ekranı doldurur. Çoğu Reels videosunun siyah şeritlerle kalacağı katlanabilir telefonlar ve tabletler için.
+Chat background	Sohbet arka planı
+Last chat's background	Son sohbetin arka planı
+A color code (#RRGGBB) for the space behind the messages in every chat, like #1E3A5F. Two codes, like #1E3A5F #6A1B9A, fade from one to the other. Only this phone sees it. Leave it blank for Facebook's own.	Her sohbette mesajların arkasındaki alan için bir renk kodu (#RRGGBB), örneğin #1E3A5F. İki kod, örneğin #1E3A5F #6A1B9A, birinden diğerine geçiş yapar. Yalnızca bu telefonda görünür. Facebook'unki için boş bırakın.
+A color code (#RRGGBB) for %1$s only, like #1E3A5F. Two codes fade from one to the other. Leave it blank and it takes the chat background above.	Yalnızca %1$s için bir renk kodu (#RRGGBB), örneğin #1E3A5F. İki kod birinden diğerine geçiş yapar. Boş bırakırsanız yukarıdaki sohbet arka planını kullanır.
+Chats keep Facebook's background. Type a color code to change it on this phone only.	Sohbetler Facebook'un arka planını korur. Yalnızca bu telefonda değiştirmek için bir renk kodu yazın.
+Chats are %1$s behind the messages, on this phone only. Nobody in the chat is told.	Sohbetlerde mesajların arkası %1$s, yalnızca bu telefonda. Sohbetteki kimseye bildirilmez.
+Open a chat, then come back here to give it a color of its own.	Bir sohbet açın, sonra ona kendi rengini vermek için buraya dönün.
+%1$s, the last chat you opened, takes the chat background above. Type a color code to give it its own.	Son açtığınız sohbet olan %1$s, yukarıdaki sohbet arka planını kullanıyor. Kendi rengini vermek için bir renk kodu yazın.
+%1$s, the last chat you opened, is %2$s.	Son açtığınız sohbet olan %1$s: %2$s.
+Type one color code, or two for a fade from top to bottom.	Bir renk kodu yazın ya da yukarıdan aşağıya geçiş için iki tane.

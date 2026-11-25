@@ -4,8 +4,20 @@ Changes in each Hushfacebook version, newest first. Versions 0.1.0 to 0.19.0 are
 
 ## Unreleased
 
+### Fixed
+
+* **Tooling:** The device walk can put back a settings backup that an older build wrote while it still had a patch this one dropped. On 0.25.0 the S22 kept a backup holding the two `Unlock app icons` switches, and the walk failed its restore check because no restore can bring back a switch the build no longer has. Any switch the installed build still lists has to come back exactly as it was.
+* **Tooling:** A device walk passes when `Pinch to zoom` or `Photo carousel` sits idle, and the same goes for `Remove the gap above Marketplace listings`. Each one only runs when Facebook happens to serve a feed video, a photo carousel or a Marketplace gap. The S22 baseline from 0.24.0 counted all of them as runs, so a feed with no video failed the walk. The S22 baseline is now the one the 0.25.0 walk wrote.
+
+## 0.25.0 (2026-11-25)
+
+* Hushfacebook v0.25.0 has 128 patches for Facebook 588.0.0.42.55. It needs Morphe Manager 2.7.0 or newer, or morphe-desktop 2.3.0 on a computer. Facebook stays on 588.0.0.42.55, so patch the same build with the same signing key and your settings carry over. Chats inside Facebook can take a background color of your own, `Hide posts from people, Pages and sites` takes groups now, and long videos in the Reels viewer get their side buttons back. The Hush settings follow your phone's light or dark theme and come in Arabic, Bulgarian, Italian and Korean too. `Unlock app icons` is gone.
+
 ### Added
 
+* `Fill every reel` sits under `Fill the screen with reels`. With both on, every reel fills the screen even when that cuts a lot off the sides, so an unfolded foldable or a tablet loses the bars without a pinch on each reel. (#571)
+* Chats that open inside Facebook can take a background color of your own. Type a color code in `Chat background` under Chats and Messenger and it goes behind the messages in every chat. `Last chat's background` gives the chat you opened last a color of its own. Two codes, like `#0D47A1 #FF6F00`, fade from top to bottom. It covers any theme the chat has, only your phone shows it, and nobody in the chat is told. (#573)
+* The Hush settings now come in Bulgarian too. They follow your phone's language, like the other translations. (#572)
 * The Hush settings now come in Arabic, translated by hamedhani1998. (#549)
 * `Hide posts from people, Pages and sites` takes groups now. Put a group's name or ID on the list, or a link to the group, and posts in that group leave Home, along with friends' shares of them. Handy for a group you're still in but don't want in your feed, since Facebook keeps showing those after you unfollow. A link only works when it has the group's number in it, like facebook.com/groups/1234567890. (#550)
 * `Show saved posts in the row` under `Play saved videos in a row` stops on a saved post instead of skipping it, so you can read it. Swipe up once you're past its end and the next saved video opens, or swipe down at its top to go back to the one before. While there's more of the post to scroll, your swipe just scrolls it. It's off until you turn it on. (#404)
@@ -23,9 +35,16 @@ Changes in each Hushfacebook version, newest first. Versions 0.1.0 to 0.19.0 are
 * `Hide reaction counts on comments` under Comments takes the number off the reaction faces on each comment. The faces stay, and tapping them still shows who reacted. Facebook's own setting for hiding reaction counts leaves comments alone. It's off until you turn it on. (#483)
 * `Hide Stars and gifts under posts` sits with the other hide switches under News feed. It takes out the button some creators' posts get for sending them Stars or gifts. It starts off. (#483)
 * `Show Videos in search` under Search puts a Videos chip in the row over search results, next to Posts, so a search can show just videos. It starts off. (#483)
+* `Share to Facebook chats` under Chats and Messenger puts `Facebook chats` in Android's share menu, for when your chats are inside Facebook. A photo or video you share there goes to your gallery, and text or a link goes to your clipboard. Then Facebook opens on your chats, so you can pick one and attach it or paste it there. Facebook carries Messenger's own share screens but none of the code behind them, so the share menu had no way into a chat before. It starts off. (#568)
+* `Post date after the caption` under Reels and Watch moves a reel's date to the end of its caption, for when the song, "AI content" and other labels crowd the line under the name. It works with `Show the post date on reels` on, and it starts off. (#490)
+
+### Changed
+
+* `Unlock app icons` is gone, along with its `Use the icon at the top of Home` switch and `Pick an app icon` row. Your other patch choices in Morphe Manager stay as they were. This selection reset only covers the removed patch, so no manual re-selection is needed.
 
 ### Fixed
 
+* Leaving Facebook while a video you opened full screen from the feed plays puts just the video in the picture-in-picture window again. Facebook kept the window tied to the feed's player, which no longer had the video, so the whole screen shrank into the window with the comment box under it, and it stayed small in a corner after you opened it back up. The same happened with a video opened from a Page's reels. (#495)
 * `Dark box behind reel names` now covers the date and details under a reel's name too ("AI content", the song), all in one box. Before, the box sat behind the name alone and its bottom edge ran through the date, which looked like a dark line under the name. `Dark box behind feed video names` does the same for the date under a name on a feed video. (#490)
 * A reel with no caption no longer gets a thin dark line under its name when `Dark box behind folded captions` or `Dark box behind open captions` is on. Facebook still makes an empty caption there, and the box went behind it with nothing to cover. (#490)
 * `Dark box behind reel names` covers group reels now, with the line under the group's name (who posted it, or the song) in the same box. Group reels draw that part their own way, so it never got a box before. (#490)
@@ -52,7 +71,9 @@ Changes in each Hushfacebook version, newest first. Versions 0.1.0 to 0.19.0 are
 * `Hide prompts and promos under reels` now cleans the row under a video in the feed too, where "Made with Edits" sat beside the poster's name. Remix, Use template, Stars and the other prompts it hides on reels go from that row as well, and `Hide the audio line on reels` takes the sound out of it. That row keeps a list of its own, so the switch never reached it before. (#314)
 * With `Hide the audio line on reels` and `Show the post date on reels` both on, a reel keeps its date. The date sits on the audio line, so hiding the line took the date along with it. Now the line stays with just the date on it and the song left off. (#496)
 * A long press on a reel's Download, Cast or Clean mode button no longer opens an empty gray box when your phone's font size is set above the default. With larger text Facebook shows a big copy of a button's label on a long press, and these buttons have no label under them, so the box came up empty. (#518)
+* With `Only reels from accounts I follow` on, a video or reel you tap in the feed opens that video again, and so does a reel link someone sends you. When its author was someone you don't follow, the full screen player dropped it and showed another video instead, or stayed black with `Open feed videos on their own` on. The switch is meant for the Reels tab, so the video a player opens on stays now, and only the reels after it get filtered. (#565)
 * The switches under `Tabs to hide` now point to `Menu tiles to hide`. Hiding a tab leaves its page in the Menu, which is the side panel on some accounts, and that list is what takes it out of there too. (#564)
+* With `Hide the tab bar on the Reels tab` on, the first reels no longer stop short of the bottom with a black band under them. Facebook sizes them before the Reels tab opens, for the tab bar that's about to go. (#566)
 
 ## 0.24.0 (2026-11-22)
 

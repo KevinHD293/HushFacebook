@@ -1132,15 +1132,6 @@ Turn off haptics	Desativar a vibração tátil
 Stops the small vibrations Facebook makes when you tap or swipe. Your keyboard and phone vibrations aren't affected.	Para as pequenas vibrações que o Facebook faz quando você toca ou desliza. As do teclado e do celular não mudam.
 Turn off screen transitions	Desativar as transições de tela
 Tabs, the Menu, photos and screens that open over Facebook appear at once instead of sliding or zooming in. Swiping between tabs still works.	As abas, o Menu, as fotos e as telas que abrem sobre o Facebook aparecem na hora, sem deslizar nem dar zoom. Deslizar entre abas continua funcionando.
-Unlock app icons	Desbloquear ícones do app
-Lets you pick the app icons Facebook keeps for Facebook Plus, on Facebook's App icon page. The Pick an app icon row opens that page. Your pick stays if you turn this off, so pick the blue one first to go back.	Permite escolher os ícones que o Facebook reserva para o Facebook Plus, na página Ícone do app do Facebook. A linha Escolher um ícone do app abre essa página. Sua escolha continua se você desativar isto, então escolha o azul antes para voltar.
-# context: settings row under Appearance, right below the Unlock app icons switch; opens Facebook's own App icon page, so use Facebook's name for that page in this language
-Pick an app icon	Escolher um ícone do app
-Opens Facebook's App icon page, even on accounts where Facebook doesn't list it in Settings and privacy.	Abre a página Ícone do app do Facebook, mesmo em contas em que o Facebook não a mostra em Configurações e privacidade.
-Use the icon at the top of Home	Usar o ícone no topo do Início
-Shows the app icon you picked at the top of Home instead of the Facebook wordmark. Needs Unlock app icons and a pick other than the blue one. Restart Facebook to see the change.	Mostra o ícone do app que você escolheu no topo do Início no lugar do logotipo de texto do Facebook. Precisa de Desbloquear ícones do app e de uma escolha diferente do azul. Reinicie o Facebook para ver a mudança.
-# context: toast when the row above finds no App icon page in this Facebook build
-This Facebook build has no App icon page.	Esta versão do Facebook não tem a página Ícone do app.
 # context: switch title under Playback; Android's own name for the floating video window
 Picture-in-picture	Picture-in-picture
 # context: summary of that switch
@@ -3056,3 +3047,27 @@ All your notifications are marked as read.	Todas as suas notificações foram ma
 Nothing was marked, since Facebook didn't say who's signed in. Open the Notifications tab once, then try again.	Nada foi marcado porque o Facebook não informou quem está conectado. Abra a aba Notificações uma vez e tente de novo.
 This build can't mark notifications as read.	Esta versão não consegue marcar as notificações como lidas.
 Facebook couldn't mark your notifications as read. Try again in a moment.	O Facebook não conseguiu marcar suas notificações como lidas. Tente de novo daqui a pouco.
+# context: Share to Facebook chats, a switch on the Chats page and the share target it adds; the notes are short toasts
+Share to Facebook chats	Compartilhar nas conversas do Facebook
+Adds Facebook chats to Android's share menu. A photo or video you share there is saved to your gallery and text is copied, then your chats open so you can pick one and send it.	Adiciona as conversas do Facebook ao menu de compartilhamento do Android. Uma foto ou vídeo que você compartilhar ali é salvo na galeria e o texto é copiado, depois suas conversas abrem para você escolher uma e enviar.
+Share to Facebook chats is off.	Compartilhar nas conversas do Facebook está desligado.
+Nothing in it to send.	Nada para enviar.
+Couldn't save it to your gallery.	Não deu para salvar na galeria.
+Copied and saved. Pick a chat.	Copiado e salvo. Escolha uma conversa.
+In your gallery now. Pick a chat.	Já está na galeria. Escolha uma conversa.
+Copied. Pick a chat and paste it.	Copiado. Escolha uma conversa e cole.
+Open your chats to pick one.	Abra suas conversas para escolher uma.
+Post date after the caption	Data da publicação depois da legenda
+With Show the post date on reels on, puts the date at the end of the caption instead of under the name, where the song and other labels crowd it. A change shows from the next reel.	Com "Mostrar a data da publicação nos reels" ligado, coloca a data no fim da legenda em vez de embaixo do nome, onde a música e outros rótulos a apertam. A mudança aparece a partir do próximo reel.
+Fill every reel	Preencher a tela com todos os reels
+With Fill the screen with reels on, every reel fills the screen, even when that cuts a lot off the edges. Made for foldables and tablets, where most reels would keep their bars.	Com "Preencher a tela com os reels" ligado, todo reel preenche a tela, mesmo quando isso corta bastante das bordas. Feito para dobráveis e tablets, onde a maioria dos reels ficaria com as faixas pretas.
+Chat background	Fundo das conversas
+Last chat's background	Fundo da última conversa
+A color code (#RRGGBB) for the space behind the messages in every chat, like #1E3A5F. Two codes, like #1E3A5F #6A1B9A, fade from one to the other. Only this phone sees it. Leave it blank for Facebook's own.	Um código de cor (#RRGGBB) para o espaço atrás das mensagens em todas as conversas, como #1E3A5F. Dois códigos, como #1E3A5F #6A1B9A, fazem uma transição de um para o outro. Só este celular mostra. Deixe em branco para o do Facebook.
+A color code (#RRGGBB) for %1$s only, like #1E3A5F. Two codes fade from one to the other. Leave it blank and it takes the chat background above.	Um código de cor (#RRGGBB) só para %1$s, como #1E3A5F. Dois códigos fazem uma transição de um para o outro. Deixe em branco e ela usa o fundo das conversas acima.
+Chats keep Facebook's background. Type a color code to change it on this phone only.	As conversas mantêm o fundo do Facebook. Digite um código de cor para mudar só neste celular.
+Chats are %1$s behind the messages, on this phone only. Nobody in the chat is told.	As conversas ficam %1$s atrás das mensagens, só neste celular. Ninguém na conversa fica sabendo.
+Open a chat, then come back here to give it a color of its own.	Abra uma conversa e volte aqui para dar a ela uma cor só dela.
+%1$s, the last chat you opened, takes the chat background above. Type a color code to give it its own.	%1$s, a última conversa que você abriu, usa o fundo das conversas acima. Digite um código de cor para dar a ela uma cor própria.
+%1$s, the last chat you opened, is %2$s.	%1$s, a última conversa que você abriu, está %2$s.
+Type one color code, or two for a fade from top to bottom.	Digite um código de cor, ou dois para uma transição de cima para baixo.

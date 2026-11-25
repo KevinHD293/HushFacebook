@@ -248,6 +248,7 @@ final class SwitchLabels {
         if (setting == Settings.SHOW_REEL_COMMENT_BUTTON) return L10n.t("Show Comment when comments are off");
         if (setting == Settings.LONG_VIDEO_BUTTONS) return L10n.t("Side buttons on long videos");
         if (setting == Settings.SHOW_REEL_POST_DATE) return L10n.t("Show the post date on reels");
+        if (setting == Settings.REEL_POST_DATE_AFTER_CAPTION) return L10n.t("Post date after the caption");
         if (setting == Settings.HIDE_REEL_NEW_FOR_YOU) return L10n.t("Hide New for you on reels");
         if (setting == Settings.HIDE_REEL_SOUND_BUTTON) return L10n.t("Hide the speaker button on reels");
         if (setting == Settings.REEL_SPEAKER_ABOVE_MENU) return L10n.t("Move the speaker above the three dots");
@@ -266,6 +267,7 @@ final class SwitchLabels {
         if (setting == Settings.SAVED_POSTS_IN_ROW) return L10n.t("Show saved posts in the row");
         if (setting == Settings.SKIP_STILL_WATCHING) return L10n.t("Skip \"Are you still watching?\"");
         if (setting == Settings.FILL_REELS) return L10n.t("Fill the screen with reels");
+        if (setting == Settings.FILL_EVERY_REEL) return L10n.t("Fill every reel");
         if (setting == Settings.PLAY_FEED_REELS_WHOLE) return L10n.t("Play whole reels in the feed's Reels row");
         if (setting == Settings.DONT_SEND_REEL_WATCH_HISTORY) return L10n.t("Don't send reel watch history");
         if (setting == Settings.NEWEST_REELS_FIRST) return L10n.t("Sort loaded reels");
@@ -277,8 +279,6 @@ final class SwitchLabels {
         if (setting == Settings.HIDE_DATA_MODE_BANNER) return L10n.t("Hide the Data mode banner");
         if (setting == Settings.HIDE_FREE_MODE_BANNER) return L10n.t("Hide the Free mode banner");
         if (setting == Settings.TURN_OFF_SCREEN_TRANSITIONS) return L10n.t("Turn off screen transitions");
-        if (setting == Settings.UNLOCK_APP_ICONS) return L10n.t("Unlock app icons");
-        if (setting == Settings.USE_APP_ICON_IN_HEADER) return L10n.t("Use the icon at the top of Home");
         if (setting == Settings.BLOCK_SCREENSHOT_DETECTION) return L10n.t("Block screenshot detection");
         if (setting == Settings.SKIP_LOCATION_PROMPTS) return L10n.t("Skip location prompts");
         if (setting == Settings.HIDE_CHAT_TYPING) return L10n.t("Hide typing in chats");
@@ -382,6 +382,7 @@ final class SwitchLabels {
         if (setting == Settings.OPEN_MESSENGER_APP) return L10n.t("Open the Messenger app");
         if (setting == Settings.LEAVE_CALLS_AND_CHATS_TO_MESSENGER) return L10n.t("Leave calls and chats to Messenger");
         if (setting == Settings.OPEN_CHATS_IN_MESSENGER) return L10n.t("Open chats in Messenger");
+        if (setting == Settings.SHARE_TO_CHATS) return L10n.t("Share to Facebook chats");
         if (setting == Settings.SAVED_SHORTCUT) return L10n.t("Saved shortcut");
         if (setting == Settings.WATCH_HISTORY_SHORTCUT) return L10n.t("Watch history shortcut");
         if (setting == Settings.FREE_STUFF_SHORTCUT) return L10n.t("Free stuff shortcut");
